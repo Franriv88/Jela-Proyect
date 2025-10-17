@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Jelambi Chef</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Panel de Administrador</h1>
+            <p>Nuevas reservas aparecerán aquí automáticamente.</p>
+            <div style="margin-top: 15px;">
+                <button id="btn-change-password" style="width: auto; padding: 10px 15px; background-color: #3498db;">Cambiar Contraseña</button>
+                <button id="btn-logout" style="width: auto; padding: 10px 15px;">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <main>
+            <h2>Listado de Reservas</h2>
+            <div id="reservations-list">
+                <p>Cargando reservas...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
