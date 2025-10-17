@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jelambi Chef - Haz tu Reserva</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Jelambi Chef</h1>
+            <p>Gastronomía de autor, donde tú elijas.</p>
+        </header>
+
+        <main id="booking-process">
+            <section id="step-1">
+                <h2>1. Elige tu Experiencia</h2>
+                <div id="menus-container" class="cards-container">
+                    </div>
+
+                <label for="comensales">Cantidad de Comensales:</label>
+                <input type="number" id="comensales" value="2" min="1">
+
+                <div id="modalidad-container" class="cards-container">
+                    <div class="card" data-value="chef-en-casa">Chef en Casa</div>
+                    <div class="card" data-value="delivery">Delivery</div>
+                </div>
+
+                <button id="btn-next-step">Haz tu Reserva</button>
+            </section>
+
+            <section id="step-2" class="hidden">
+                <h2>2. Completa tus Datos</h2>
+                
+                <div id="resumen">
+                    <h3>Resumen de tu pedido:</h3>
+                    <p id="resumen-texto"></p>
+                </div>
+
+                <form id="booking-form">
+                    <label>¿Tienes alguna alergia?</label>
+                    <input type="radio" name="alergia" value="no" checked> No
+                    <input type="radio" name="alergia" value="si"> Sí
+                    <textarea id="alergia-detalle" class="hidden" placeholder="Especifica tus alergias..."></textarea>
+                    
+                    <label for="fecha">Fecha y Hora:</label>
+                    <input type="datetime-local" id="fecha" required>
+                    
+                    <label for="direccion">Dirección (Calle y Altura):</label>
+                    <input type="text" id="direccion" placeholder="Ej: Av. Corrientes 1234" required>
+                    
+                    <label for="email">Tu Correo Electrónico:</label>
+                    <input type="email" id="email" placeholder="nombre@ejemplo.com" required>
+                    
+                    <button type="submit" id="btn-confirm" disabled>Confirmar Reserva</button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script src="firebase-config.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
