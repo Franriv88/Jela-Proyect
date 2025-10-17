@@ -1,80 +1,119 @@
 // --- Bloque de Seguridad: Proteger la ruta ---
-// Esto se ejecuta de inmediato para verificar si el usuario ha iniciado sesión.
 firebase.auth().onAuthStateChanged((user) => {
     if (!user) {
-        // Si no hay usuario, redirigir inmediatamente a la página de login.
         window.location.href = 'login.html';
     }
 });
 
-
 // --- Lógica Principal del Panel de Admin ---
-// Esto se ejecuta solo después de que toda la página HTML se ha cargado.
 document.addEventListener('DOMContentLoaded', () => {
-    // Referencias a los elementos del DOM que ahora sí existen
+    // Referencias a elementos
     const reservationsList = document.getElementById('reservations-list');
     const btnChangePassword = document.getElementById('btn-change-password');
     const btnLogout = document.getElementById('btn-logout');
+    const tabs = document.querySelectorAll('.tabs button');
 
-    // --- Lógica para Cerrar Sesión ---
+    let currentReservations = [];
+    let activeTab = 'proximas';
+
+    // --- Lógica de Pestañas ---
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            activeTab = tab.id.replace('tab-', '');
+            renderReservations();
+        });
+    });
+
+    // --- Lógica de Usuario ---
     btnLogout.addEventListener('click', () => {
         if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
-            firebase.auth().signOut().catch((error) => {
-                console.error("Error al cerrar sesión:", error);
-            });
+            firebase.auth().signOut().catch((error) => console.error("Error al cerrar sesión:", error));
         }
     });
 
-    // --- Lógica para Cambiar Contraseña ---
     btnChangePassword.addEventListener('click', () => {
         const user = firebase.auth().currentUser;
-        if (!user) return; // Medida de seguridad extra
-
+        if (!user) return;
         const newPassword = prompt("Ingresa tu nueva contraseña (mínimo 6 caracteres):");
         if (newPassword && newPassword.length >= 6) {
             user.updatePassword(newPassword)
-                .then(() => {
-                    alert("¡Contraseña actualizada con éxito!");
-                })
-                .catch((error) => {
-                    console.error("Error al cambiar la contraseña:", error);
-                    alert("Hubo un error al actualizar tu contraseña. Puede que necesites volver a iniciar sesión.");
-                });
+                .then(() => alert("¡Contraseña actualizada con éxito!"))
+                .catch((error) => alert("Hubo un error al actualizar tu contraseña."));
         } else if (newPassword) {
             alert("La contraseña debe tener al menos 6 caracteres.");
         }
     });
 
-    // --- Cargar las Reservas en Tiempo Real ---
-    db.collection('reservations').orderBy('timestamp', 'desc').onSnapshot((querySnapshot) => {
-        if (querySnapshot.empty) {
-            reservationsList.innerHTML = '<p>Aún no hay reservas.</p>';
+    // --- FUNCIÓN PARA ACTUALIZAR EL ESTADO (CORREGIDA) ---
+    window.updateReservationStatus = (id, newStatus) => {
+        const reservationRef = db.collection('reservations').doc(id);
+        let updateData = { estado: newStatus };
+
+        if (newStatus === 'Cancelada') {
+            const reason = prompt("Por favor, ingresa el motivo de la cancelación (ej: 'Cancelado por el cliente')");
+            if (reason) {
+                updateData.motivoCancelacion = reason;
+            } else {
+                return;
+            }
+        } else {
+            // *** ESTA ES LA LÍNEA CORREGIDA ***
+            // Llamamos a FieldValue directamente desde el objeto global de firebase
+            updateData.motivoCancelacion = firebase.firestore.FieldValue.delete();
+        }
+        
+        console.log("Actualizando reserva con estos datos:", updateData);
+
+        reservationRef.update(updateData)
+            .catch((error) => console.error("Error al actualizar el estado: ", error));
+    };
+
+    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS ---
+    const renderReservations = () => {
+        reservationsList.innerHTML = '';
+        const filteredReservations = currentReservations.filter(doc => {
+            const status = doc.data().estado;
+            if (activeTab === 'proximas') return status !== 'Finalizada' && status !== 'Cancelada';
+            if (activeTab === 'finalizadas') return status === 'Finalizada';
+            if (activeTab === 'canceladas') return status === 'Cancelada';
+        });
+
+        if (filteredReservations.length === 0) {
+            reservationsList.innerHTML = `<p>No hay reservas en esta categoría.</p>`;
             return;
         }
 
-        reservationsList.innerHTML = ''; // Limpiar la lista
-        querySnapshot.forEach((doc) => {
+        filteredReservations.forEach(doc => {
             const reserva = doc.data();
-            const fecha = new Date(reserva.fecha).toLocaleString('es-ES', {
-                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-
+            const id = doc.id;
+            const fecha = new Date(reserva.fecha).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+            
             const reservationCard = document.createElement('div');
             reservationCard.className = 'reserva-card';
             reservationCard.innerHTML = `
                 <p><strong>Email:</strong> ${reserva.email}</p>
                 <p><strong>Fecha:</strong> ${fecha}</p>
                 <p><strong>Menú:</strong> ${reserva.menu}</p>
-                <p><strong>Comensales:</strong> ${reserva.comensales}</p>
-                <p><strong>Modalidad:</strong> ${reserva.modalidad}</p>
                 <p><strong>Dirección:</strong> ${reserva.direccion}</p>
                 ${reserva.alergia === 'si' ? `<p><strong>Alergias:</strong> ${reserva.alergiaDetalle}</p>` : ''}
                 <p><em>Estado: ${reserva.estado}</em></p>
+                ${reserva.motivoCancelacion ? `<div class="cancel-reason"><strong>Motivo:</strong> ${reserva.motivoCancelacion}</div>` : ''}
+                <div class="actions">
+                    <button onclick="updateReservationStatus('${id}', 'Confirmada')">Confirmar</button>
+                    <button onclick="updateReservationStatus('${id}', 'Pendiente')" class="btn-secondary">Pendiente</button>
+                    <button onclick="updateReservationStatus('${id}', 'Finalizada')" class="btn-secondary">Finalizar</button>
+                    <button onclick="updateReservationStatus('${id}', 'Cancelada')" class="btn-danger">Cancelar</button>
+                </div>
             `;
             reservationsList.appendChild(reservationCard);
         });
-    }, (error) => {
-        console.error("Error al obtener las reservas: ", error);
-        reservationsList.innerHTML = '<p>Error al cargar las reservas.</p>';
+    };
+
+    // --- ESCUCHAR CAMBIOS EN FIRESTORE EN TIEMPO REAL ---
+    db.collection('reservations').orderBy('timestamp', 'desc').onSnapshot((querySnapshot) => {
+        currentReservations = querySnapshot.docs;
+        renderReservations();
     });
 });

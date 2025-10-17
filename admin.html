@@ -11,15 +11,21 @@
     <div class="container">
         <header>
             <h1>Panel de Administrador</h1>
-            <p>Nuevas reservas aparecerán aquí automáticamente.</p>
-            <div style="margin-top: 15px;">
-                <button id="btn-change-password" style="width: auto; padding: 10px 15px; background-color: #3498db;">Cambiar Contraseña</button>
-                <button id="btn-logout" style="width: auto; padding: 10px 15px;">Cerrar Sesión</button>
+            <p>Gestiona todas las reservas de Jelambi Chef.</p>
+            <a href="availability.html" class="nav-link">Gestionar Disponibilidad</a>
+            <div class="header-actions">
+                <button id="btn-change-password">Cambiar Contraseña</button>
+                <button id="btn-logout">Cerrar Sesión</button>
             </div>
         </header>
 
         <main>
-            <h2>Listado de Reservas</h2>
+            <div class="tabs">
+                <button id="tab-proximas" class="active">Próximas</button>
+                <button id="tab-finalizadas">Finalizadas</button>
+                <button id="tab-canceladas">Canceladas</button>
+            </div>
+
             <div id="reservations-list">
                 <p>Cargando reservas...</p>
             </div>

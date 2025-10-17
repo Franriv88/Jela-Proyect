@@ -20,6 +20,7 @@ body {
     padding: 20px;
     background-color: var(--white);
     min-height: 100vh;
+    box-sizing: border-box;
 }
 
 header {
@@ -33,34 +34,6 @@ h1, h2 {
     color: var(--primary-color);
 }
 
-/* Tarjetas */
-.cards-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.card {
-    border: 2px solid var(--light-gray);
-    padding: 20px;
-    text-align: center;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-}
-
-.card:hover {
-    border-color: var(--secondary-color);
-    transform: translateY(-3px);
-}
-
-.card.selected {
-    border-color: var(--secondary-color);
-    background-color: #fbeae8;
-    font-weight: bold;
-}
-
 /* Formularios */
 form label {
     display: block;
@@ -71,6 +44,7 @@ form label {
 form input[type="text"],
 form input[type="number"],
 form input[type="email"],
+form input[type="password"],
 form input[type="datetime-local"],
 form textarea {
     width: 100%;
@@ -78,10 +52,10 @@ form textarea {
     margin-top: 5px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
+    box-sizing: border-box;
 }
 
-/* Botones */
+/* Botones Generales */
 button {
     display: block;
     width: 100%;
@@ -106,25 +80,136 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* Clases de Utilidad */
-.hidden {
-    display: none;
+/* Estilos para las acciones del header en admin.html */
+.header-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.header-actions button {
+    width: auto;
+    padding: 10px 15px;
+    margin-top: 0;
 }
 
-/* Estilos para el panel de admin */
-#reservations-list div {
+/* Estilos para el sistema de Pestañas */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+}
+.tabs button {
+    flex-grow: 1;
+    padding: 15px 10px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    color: #7f8c8d;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+.tabs button:hover {
+    background-color: #f9f9f9;
+    color: var(--primary-color);
+}
+.tabs button.active {
+    color: var(--secondary-color);
+    font-weight: bold;
+    border-bottom-color: var(--secondary-color);
+}
+
+/* Estilos de las tarjetas de reserva */
+.reserva-card {
     border: 1px solid #ddd;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
 }
-#reservations-list p {
-    margin: 5px 0;
+.reserva-card .actions {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap; /* Para que se vea bien en móviles */
+    gap: 10px;
+}
+.reserva-card .actions button {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 14px;
+    margin-top: 0;
+}
+.btn-secondary {
+    background-color: #2980b9;
+}
+.btn-secondary:hover {
+    background-color: #3498db;
+}
+.btn-danger {
+    background-color: #c0392b;
+}
+.btn-danger:hover {
+    background-color: #e74c3c;
 }
 
-/* Responsive para pantallas más grandes */
-@media (min-width: 500px) {
-    .cards-container {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+/* Estilos para el motivo de cancelación */
+.cancel-reason {
+    background-color: #fbeae8;
+    border-left: 3px solid var(--secondary-color);
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+
+/* Estilo para los enlaces de navegación del admin */
+.nav-link {
+    display: block;
+    margin: 15px auto 0;
+    padding: 10px;
+    background-color: #3498db; /* Un color azul distintivo */
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    max-width: 280px;
+    transition: background-color 0.2s;
+    font-weight: bold;
+}
+.nav-link:hover {
+    background-color: #2980b9;
+}
+
+
+/* --- AJUSTES PARA MÓVILES --- */
+@media (max-width: 600px) {
+
+    /* Reduce el padding general en pantallas pequeñas para dar más espacio */
+    .container {
+        padding: 10px;
+    }
+
+    /* Permite que los botones del header se pongan uno debajo del otro */
+    .header-actions {
+        flex-wrap: wrap;
+        justify-content: center; /* Centra los botones */
+    }
+
+    /* Reduce el tamaño y padding de las pestañas para que quepan mejor */
+    .tabs button {
+        padding: 12px 5px;
+        font-size: 14px;
+    }
+
+    /* LA REGLA MÁS IMPORTANTE: */
+    /* Permite que los botones de acción dentro de cada reserva se reorganicen verticalmente */
+    .reserva-card .actions {
+        flex-direction: column; /* Apila los botones verticalmente */
+    }
+
+    /* Asegura que los botones apilados ocupen todo el ancho para un look uniforme */
+    .reserva-card .actions button {
+        width: 100%;
     }
 }

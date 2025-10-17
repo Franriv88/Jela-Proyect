@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jelambi Chef - Haz tu Reserva</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -46,7 +47,7 @@
                     <textarea id="alergia-detalle" class="hidden" placeholder="Especifica tus alergias..."></textarea>
                     
                     <label for="fecha">Fecha y Hora:</label>
-                    <input type="datetime-local" id="fecha" required>
+                    <input type="text" id="fecha" required placeholder="Selecciona una fecha...">
                     
                     <label for="direccion">Dirección (Calle y Altura):</label>
                     <input type="text" id="direccion" placeholder="Ej: Av. Corrientes 1234" required>
@@ -60,9 +61,13 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
     <script src="firebase-config.js"></script>
     <script src="main.js"></script>
 </body>

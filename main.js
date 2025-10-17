@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Referencias a elementos del DOM
     const menusContainer = document.getElementById('menus-container');
     const modalidadContainer = document.getElementById('modalidad-container');
@@ -10,12 +10,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const alergiaRadios = document.querySelectorAll('input[name="alergia"]');
     const alergiaDetalle = document.getElementById('alergia-detalle');
     const btnConfirm = document.getElementById('btn-confirm');
-    
+
     let seleccion = {
         menu: null,
         modalidad: null,
         comensales: 2
     };
+    let blockedDates = [];
+
+    // --- Cargar Fechas Bloqueadas desde Firestore ---
+    try {
+        const snapshot = await db.collection('availability').get();
+        blockedDates = snapshot.docs.map(doc => doc.id);
+        console.log("Días no disponibles cargados:", blockedDates);
+    } catch (error) {
+        console.error("Error al cargar la disponibilidad:", error);
+    }
+
+    // --- Inicializar el Selector de Fecha y Hora del Cliente ---
+    flatpickr("#fecha", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        locale: "es",
+        minDate: "today",
+        disable: blockedDates, // Deshabilita las fechas bloqueadas por el chef
+        time_24hr: true
+    });
 
     // --- Cargar Menús desde Firestore ---
     async function cargarMenus() {
@@ -41,9 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleSelection(container, key) {
         container.addEventListener('click', (e) => {
             if (e.target.classList.contains('card')) {
-                // Quitar selección previa
                 [...container.children].forEach(child => child.classList.remove('selected'));
-                // Seleccionar nuevo
                 e.target.classList.add('selected');
                 seleccion[key] = key === 'menu' ? e.target.dataset.nombre : e.target.dataset.value;
             }
@@ -60,22 +78,19 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Por favor, selecciona un menú y una modalidad.');
             return;
         }
-        
-        // Mostrar resumen y cambiar de vista
+
         resumenTexto.textContent = `${seleccion.menu}, para ${seleccion.comensales} personas. Modalidad: ${seleccion.modalidad.replace('-', ' ')}.`;
         step1.classList.add('hidden');
         step2.classList.remove('hidden');
     });
 
     // --- Lógica del Formulario ---
-    // Mostrar/ocultar detalle de alergia
     alergiaRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             alergiaDetalle.classList.toggle('hidden', e.target.value === 'no');
         });
     });
 
-    // Habilitar botón de confirmar solo si el formulario es válido
     bookingForm.addEventListener('keyup', () => {
         btnConfirm.disabled = !bookingForm.checkValidity();
     });
@@ -101,12 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.collection('reservations').add(reserva);
             alert('¡Reserva confirmada! Gracias por elegirnos.');
             
-            // Aquí iría la lógica para PDF y WhatsApp
-            // window.open(`https://wa.me/TUNUMERODECELULAR?text=Hola! Acabo de confirmar una reserva...`);
-            
             bookingForm.reset();
             step2.classList.add('hidden');
             step1.classList.remove('hidden');
+            [...menusContainer.children].forEach(child => child.classList.remove('selected'));
+            [...modalidadContainer.children].forEach(child => child.classList.remove('selected'));
 
         } catch (error) {
             console.error("Error al guardar la reserva: ", error);
@@ -117,6 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Cargar todo al iniciar
+    // Iniciar la carga de menús
     cargarMenus();
 });
