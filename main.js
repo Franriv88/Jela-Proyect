@@ -1,5 +1,69 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // Referencias a elementos del DOM
+
+    // --- LÓGICA DEL CARRUSEL EN ABANICO (VERSIÓN FINAL) ---
+
+    const mainHeaderImage = 'Recursos/Img/portada.jpg';
+    const carouselImages = [
+        'Recursos/Img/gettyimages-1789034712-612x612.jpg',
+        'Recursos/Img/images.jpg',
+        'Recursos/Img/licensed-image (1).jpg',
+        'Recursos/Img/portada.jpg',
+        'Recursos/Img/licensed-image (2).jpg',
+        'Recursos/Img/licensed-image.jpg'
+    ];
+
+    const mainImageContainer = document.querySelector('.carousel-main-image');
+    const thumbnailsContainer = document.querySelector('.carousel-thumbnails');
+    let currentIndex = 0; // Siempre apunta al índice de la imagen en la posición 1 (adelante)
+
+    if (mainImageContainer && carouselImages.length > 0) {
+        mainImageContainer.innerHTML = `<img src="${mainHeaderImage}" alt="Bienvenida a Jelambi Chef">`;
+        const mainImage = mainImageContainer.querySelector('img');
+
+        const renderThumbnails = () => {
+            thumbnailsContainer.innerHTML = '';
+            
+            const visibleThumbnails = 3;
+            for (let i = 0; i < visibleThumbnails; i++) {
+                // Usamos el operador % (módulo) para crear un bucle infinito y seguro
+                const imageIndex = (currentIndex + i) % carouselImages.length;
+                
+                // Si solo hay 1 o 2 imágenes, no queremos repetir la misma en el abanico
+                if (i > 0 && imageIndex === currentIndex) break;
+
+                const imageUrl = carouselImages[imageIndex];
+
+                const thumb = document.createElement('img');
+                thumb.src = imageUrl;
+                thumb.className = `thumbnail pos-${i + 1}`;
+                
+                thumb.addEventListener('click', () => {
+                    // 1. La imagen clickeada se convierte en la principal del header
+                    mainImage.style.opacity = '0';
+                    setTimeout(() => {
+                        mainImage.src = imageUrl;
+                        mainImage.style.opacity = '1';
+                    }, 400);
+
+                    // 2. La siguiente imagen en la lista pasa a estar al frente del abanico
+                    currentIndex = (imageIndex + 1) % carouselImages.length;
+                    
+                    // 3. Volver a dibujar el abanico con el nuevo orden
+                    renderThumbnails();
+                });
+                
+                thumbnailsContainer.appendChild(thumb);
+            }
+        };
+
+        renderThumbnails(); // Dibujar el carrusel por primera vez
+    }
+
+    // --- FIN DE LA LÓGICA DEL CARRUSEL ---
+
+
+    // --- LÓGICA DEL SISTEMA DE RESERVAS (SIN CAMBIOS) ---
+
     const menusContainer = document.getElementById('menus-container');
     const modalidadContainer = document.getElementById('modalidad-container');
     const step1 = document.getElementById('step-1');
@@ -18,30 +82,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     let blockedDates = [];
 
-    // --- Cargar Fechas Bloqueadas desde Firestore ---
     try {
         const snapshot = await db.collection('availability').get();
         blockedDates = snapshot.docs.map(doc => doc.id);
-        console.log("Días no disponibles cargados:", blockedDates);
     } catch (error) {
         console.error("Error al cargar la disponibilidad:", error);
     }
 
-    // --- Inicializar el Selector de Fecha y Hora del Cliente ---
     flatpickr("#fecha", {
         enableTime: true,
         dateFormat: "Y-m-d H:i",
         locale: "es",
         minDate: "today",
-        disable: blockedDates, // Deshabilita las fechas bloqueadas por el chef
+        disable: blockedDates,
         time_24hr: true
     });
 
-    // --- Cargar Menús desde Firestore ---
     async function cargarMenus() {
         try {
             const querySnapshot = await db.collection('menus').get();
-            menusContainer.innerHTML = ''; // Limpiar contenedor
+            menusContainer.innerHTML = '';
             querySnapshot.forEach((doc) => {
                 const menu = doc.data();
                 const card = document.createElement('div');
@@ -53,11 +113,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         } catch (error) {
             console.error("Error al cargar menús: ", error);
-            menusContainer.innerHTML = '<p>No se pudieron cargar los menús. Intente más tarde.</p>';
         }
     }
 
-    // --- Lógica de Selección ---
     function handleSelection(container, key) {
         container.addEventListener('click', (e) => {
             if (e.target.classList.contains('card')) {
@@ -71,20 +129,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     handleSelection(menusContainer, 'menu');
     handleSelection(modalidadContainer, 'modalidad');
 
-    // --- Lógica para pasar a la Etapa 2 ---
     btnNextStep.addEventListener('click', () => {
         seleccion.comensales = document.getElementById('comensales').value;
         if (!seleccion.menu || !seleccion.modalidad) {
             alert('Por favor, selecciona un menú y una modalidad.');
             return;
         }
-
         resumenTexto.textContent = `${seleccion.menu}, para ${seleccion.comensales} personas. Modalidad: ${seleccion.modalidad.replace('-', ' ')}.`;
         step1.classList.add('hidden');
         step2.classList.remove('hidden');
     });
 
-    // --- Lógica del Formulario ---
     alergiaRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             alergiaDetalle.classList.toggle('hidden', e.target.value === 'no');
@@ -95,12 +150,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnConfirm.disabled = !bookingForm.checkValidity();
     });
 
-    // --- Guardar Reserva en Firestore ---
     bookingForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         btnConfirm.disabled = true;
         btnConfirm.textContent = 'Procesando...';
-
         const reserva = {
             ...seleccion,
             alergia: document.querySelector('input[name="alergia"]:checked').value,
@@ -115,22 +168,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await db.collection('reservations').add(reserva);
             alert('¡Reserva confirmada! Gracias por elegirnos.');
-            
             bookingForm.reset();
             step2.classList.add('hidden');
             step1.classList.remove('hidden');
             [...menusContainer.children].forEach(child => child.classList.remove('selected'));
             [...modalidadContainer.children].forEach(child => child.classList.remove('selected'));
-
         } catch (error) {
             console.error("Error al guardar la reserva: ", error);
-            alert('Hubo un problema al confirmar tu reserva. Por favor, intenta de nuevo.');
+            alert('Hubo un problema al confirmar tu reserva.');
         } finally {
             btnConfirm.disabled = false;
             btnConfirm.textContent = 'Confirmar Reserva';
         }
     });
 
-    // Iniciar la carga de menús
     cargarMenus();
 });

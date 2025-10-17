@@ -1,6 +1,6 @@
-/* Estilos Generales y Mobile-First */
+/* --- ESTILOS GENERALES Y MOBILE-FIRST --- */
 :root {
-    --primary-color: #2c3e50;
+    --primary-color: #000000;
     --secondary-color: #e74c3c;
     --light-gray: #ecf0f1;
     --white: #ffffff;
@@ -9,16 +9,17 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
-    background-color: var(--light-gray);
+    background-color: var(--primary-color);
     color: var(--primary-color);
     line-height: 1.6;
+    padding: 0;
 }
 
 .container {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;
-    background-color: var(--white);
+    background-color: #2c3e50;
     min-height: 100vh;
     box-sizing: border-box;
 }
@@ -31,10 +32,102 @@ header {
 }
 
 h1, h2 {
-    color: var(--primary-color);
+    color: var(--light-gray);
+    
 }
 
-/* Formularios */
+/* --- ESTILOS PARA EL NUEVO CARRUSEL EN ABANICO --- */
+
+/* --- ESTILOS PARA EL NUEVO CARRUSEL EN ABANICO (CORREGIDO) --- */
+
+#carousel-header {
+    position: relative;
+    width: 100%;
+    height: 40vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    color: white;
+    background-color: #2c3e50;
+}
+
+.carousel-main-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#carousel-header::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2;
+}
+
+.header-content {
+    position: relative;
+    z-index: 3;
+}
+
+.carousel-thumbnails {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 150px;
+    height: 100px; /* Aumentamos un poco la altura para dar espacio */
+    z-index: 3;
+}
+
+.carousel-thumbnails .thumbnail {
+    position: absolute;
+    width: 100px;
+    height: 65px;
+    object-fit: cover;
+    border: 2px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* LA CORRECCIÓN CLAVE: Posicionamiento explícito para cada tarjeta */
+.thumbnail.pos-1 {
+    top: 0; /* Todas las tarjetas alineadas a la parte superior */
+    left: 0;
+    z-index: 3;
+    transform: scale(1);
+}
+.thumbnail.pos-2 {
+    top: 0; /* Todas las tarjetas alineadas a la parte superior */
+    left: 30px;     /* Mantiene el desfase a la derecha */
+    z-index: 2;
+    transform: scale(0.9);
+}
+.thumbnail.pos-3 {
+    top: 0; /* Todas las tarjetas alineadas a la parte superior */
+    left: 50px;     /* Mantiene el desfase a la derecha */
+    z-index: 1;
+    transform: scale(0.8);
+}
+
+.thumbnail:hover {
+    transform: translateY(-5px) scale(1.05);
+    z-index: 4; /* Se pone por encima de las demás al pasar el ratón */
+}
+
+/* --- FORMULARIOS Y BOTONES --- */
+
 form label {
     display: block;
     margin-top: 15px;
@@ -55,7 +148,6 @@ form textarea {
     box-sizing: border-box;
 }
 
-/* Botones Generales */
 button {
     display: block;
     width: 100%;
@@ -80,7 +172,8 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* Estilos para las acciones del header en admin.html */
+/* --- ESTILOS DEL PANEL DE ADMINISTRADOR --- */
+
 .header-actions {
     margin-top: 15px;
     display: flex;
@@ -93,7 +186,6 @@ button:disabled {
     margin-top: 0;
 }
 
-/* Estilos para el sistema de Pestañas */
 .tabs {
     display: flex;
     border-bottom: 2px solid #ddd;
@@ -120,7 +212,6 @@ button:disabled {
     border-bottom-color: var(--secondary-color);
 }
 
-/* Estilos de las tarjetas de reserva */
 .reserva-card {
     border: 1px solid #ddd;
     padding: 15px;
@@ -131,7 +222,7 @@ button:disabled {
 .reserva-card .actions {
     margin-top: 15px;
     display: flex;
-    flex-wrap: wrap; /* Para que se vea bien en móviles */
+    flex-wrap: wrap;
     gap: 10px;
 }
 .reserva-card .actions button {
@@ -153,7 +244,6 @@ button:disabled {
     background-color: #e74c3c;
 }
 
-/* Estilos para el motivo de cancelación */
 .cancel-reason {
     background-color: #fbeae8;
     border-left: 3px solid var(--secondary-color);
@@ -163,13 +253,11 @@ button:disabled {
     font-style: italic;
 }
 
-
-/* Estilo para los enlaces de navegación del admin */
 .nav-link {
     display: block;
     margin: 15px auto 0;
     padding: 10px;
-    background-color: #3498db; /* Un color azul distintivo */
+    background-color: #3498db;
     color: white;
     text-decoration: none;
     border-radius: 8px;
@@ -181,34 +269,26 @@ button:disabled {
     background-color: #2980b9;
 }
 
-
 /* --- AJUSTES PARA MÓVILES --- */
 @media (max-width: 600px) {
-
-    /* Reduce el padding general en pantallas pequeñas para dar más espacio */
     .container {
         padding: 10px;
     }
 
-    /* Permite que los botones del header se pongan uno debajo del otro */
     .header-actions {
         flex-wrap: wrap;
-        justify-content: center; /* Centra los botones */
+        justify-content: center;
     }
 
-    /* Reduce el tamaño y padding de las pestañas para que quepan mejor */
     .tabs button {
         padding: 12px 5px;
         font-size: 14px;
     }
 
-    /* LA REGLA MÁS IMPORTANTE: */
-    /* Permite que los botones de acción dentro de cada reserva se reorganicen verticalmente */
     .reserva-card .actions {
-        flex-direction: column; /* Apila los botones verticalmente */
+        flex-direction: column;
     }
 
-    /* Asegura que los botones apilados ocupen todo el ancho para un look uniforme */
     .reserva-card .actions button {
         width: 100%;
     }

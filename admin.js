@@ -1,119 +1,209 @@
-// --- Bloque de Seguridad: Proteger la ruta ---
-firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-        window.location.href = 'login.html';
-    }
-});
+document.addEventListener('DOMContentLoaded', async () => {
 
-// --- Lógica Principal del Panel de Admin ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Referencias a elementos
-    const reservationsList = document.getElementById('reservations-list');
-    const btnChangePassword = document.getElementById('btn-change-password');
-    const btnLogout = document.getElementById('btn-logout');
-    const tabs = document.querySelectorAll('.tabs button');
+    // --- LÓGICA DEL CARRUSEL EN ABANICO ---
 
-    let currentReservations = [];
-    let activeTab = 'proximas';
+    // 1. Define la imagen principal y la lista de imágenes para las miniaturas.
+    const mainHeaderImage = 'Recursos/Img/portada.jpg'; // Imagen principal fija del header
+    const carouselImages = [
+        'Recursos/Img/gettyimages-1789034712-612x612.jpg',
+        'Recursos/Img/images.jpg',
+        'Recursos/Img/licensed-image (1).jpg',
+        'Recursos/Img/licensed-image (2).jpg',
+        'Recursos/Img/licensed-image.jpg'
+        // Puedes agregar más imágenes aquí y el sistema las incluirá en el ciclo
+    ];
 
-    // --- Lógica de Pestañas ---
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            activeTab = tab.id.replace('tab-', '');
-            renderReservations();
-        });
-    });
+    const mainImageContainer = document.querySelector('.carousel-main-image');
+    const thumbnailsContainer = document.querySelector('.carousel-thumbnails');
+    let currentIndex = 0; // Controla qué imagen está al frente del abanico
 
-    // --- Lógica de Usuario ---
-    btnLogout.addEventListener('click', () => {
-        if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
-            firebase.auth().signOut().catch((error) => console.error("Error al cerrar sesión:", error));
-        }
-    });
+    if (mainImageContainer && carouselImages.length > 0) {
+        // 2. Cargar la imagen principal del header.
+        mainImageContainer.innerHTML = `<img src="${mainHeaderImage}" alt="Bienvenida a Jelambi Chef">`;
+        const mainImage = mainImageContainer.querySelector('img');
 
-    btnChangePassword.addEventListener('click', () => {
-        const user = firebase.auth().currentUser;
-        if (!user) return;
-        const newPassword = prompt("Ingresa tu nueva contraseña (mínimo 6 caracteres):");
-        if (newPassword && newPassword.length >= 6) {
-            user.updatePassword(newPassword)
-                .then(() => alert("¡Contraseña actualizada con éxito!"))
-                .catch((error) => alert("Hubo un error al actualizar tu contraseña."));
-        } else if (newPassword) {
-            alert("La contraseña debe tener al menos 6 caracteres.");
-        }
-    });
+        // 3. Función para renderizar y actualizar las miniaturas en abanico.
+        const renderThumbnails = () => {
+            thumbnailsContainer.innerHTML = ''; // Limpiar miniaturas existentes para redibujar
+            
+            // Mostrar un máximo de 3 miniaturas visibles a la vez.
+            for (let i = 0; i < 3; i++) {
+                if (currentIndex + i >= carouselImages.length) {
+                    // Si no hay suficientes imágenes para mostrar 3, no hacer nada.
+                    continue;
+                }
+                
+                // El índice de la imagen a mostrar en la lista original
+                const imageIndex = currentIndex + i;
+                const imageUrl = carouselImages[imageIndex];
 
-    // --- FUNCIÓN PARA ACTUALIZAR EL ESTADO (CORREGIDA) ---
-    window.updateReservationStatus = (id, newStatus) => {
-        const reservationRef = db.collection('reservations').doc(id);
-        let updateData = { estado: newStatus };
+                const thumb = document.createElement('img');
+                thumb.src = imageUrl;
+                thumb.dataset.index = imageIndex; // Guardamos el índice original
+                thumb.className = `thumbnail pos-${i + 1}`; // Asigna la clase de posición (pos-1, pos-2, pos-3)
+                
+                thumbnailsContainer.appendChild(thumb);
 
-        if (newStatus === 'Cancelada') {
-            const reason = prompt("Por favor, ingresa el motivo de la cancelación (ej: 'Cancelado por el cliente')");
-            if (reason) {
-                updateData.motivoCancelacion = reason;
-            } else {
-                return;
+                // 4. Añadir el evento de clic a cada miniatura.
+                thumb.addEventListener('click', () => {
+                    const clickedIndex = parseInt(thumb.dataset.index);
+
+                    // Reemplazar la imagen principal fija por la imagen clickeada
+                    mainImage.style.opacity = '0';
+                    setTimeout(() => {
+                        mainImage.src = carouselImages[clickedIndex];
+                        mainImage.style.opacity = '1';
+                    }, 500);
+
+                    // Si se hace clic en la primera tarjeta, avanza el carrusel
+                    if (i === 0 && carouselImages.length > currentIndex + 1) {
+                        currentIndex++;
+                    } else {
+                        // Si se hace clic en otra, esa pasa al frente
+                        currentIndex = clickedIndex;
+                    }
+                    
+                    renderThumbnails(); // Volver a renderizar el abanico con el nuevo orden
+                });
             }
-        } else {
-            // *** ESTA ES LA LÍNEA CORREGIDA ***
-            // Llamamos a FieldValue directamente desde el objeto global de firebase
-            updateData.motivoCancelacion = firebase.firestore.FieldValue.delete();
-        }
-        
-        console.log("Actualizando reserva con estos datos:", updateData);
+        };
 
-        reservationRef.update(updateData)
-            .catch((error) => console.error("Error al actualizar el estado: ", error));
+        // 5. Renderizar las miniaturas por primera vez al cargar la página.
+        renderThumbnails();
+    }
+
+    // --- FIN DE LA LÓGICA DEL CARRUSEL ---
+
+
+    // --- LÓGICA DEL SISTEMA DE RESERVAS ---
+
+    // Referencias a los elementos del DOM para el formulario.
+    const menusContainer = document.getElementById('menus-container');
+    const modalidadContainer = document.getElementById('modalidad-container');
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const btnNextStep = document.getElementById('btn-next-step');
+    const bookingForm = document.getElementById('booking-form');
+    const resumenTexto = document.getElementById('resumen-texto');
+    const alergiaRadios = document.querySelectorAll('input[name="alergia"]');
+    const alergiaDetalle = document.getElementById('alergia-detalle');
+    const btnConfirm = document.getElementById('btn-confirm');
+
+    let seleccion = {
+        menu: null,
+        modalidad: null,
+        comensales: 2
     };
+    let blockedDates = [];
 
-    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS ---
-    const renderReservations = () => {
-        reservationsList.innerHTML = '';
-        const filteredReservations = currentReservations.filter(doc => {
-            const status = doc.data().estado;
-            if (activeTab === 'proximas') return status !== 'Finalizada' && status !== 'Cancelada';
-            if (activeTab === 'finalizadas') return status === 'Finalizada';
-            if (activeTab === 'canceladas') return status === 'Cancelada';
+    // Cargar las fechas bloqueadas por el chef desde Firestore.
+    try {
+        const snapshot = await db.collection('availability').get();
+        blockedDates = snapshot.docs.map(doc => doc.id);
+        console.log("Días no disponibles cargados:", blockedDates);
+    } catch (error) {
+        console.error("Error al cargar la disponibilidad:", error);
+    }
+
+    // Inicializar el calendario (flatpickr) deshabilitando los días no disponibles.
+    flatpickr("#fecha", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        locale: "es",
+        minDate: "today",
+        disable: blockedDates,
+        time_24hr: true
+    });
+
+    // Cargar los menús desde Firestore.
+    async function cargarMenus() {
+        try {
+            const querySnapshot = await db.collection('menus').get();
+            menusContainer.innerHTML = '';
+            querySnapshot.forEach((doc) => {
+                const menu = doc.data();
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.textContent = menu.nombre;
+                card.dataset.id = doc.id;
+                card.dataset.nombre = menu.nombre;
+                menusContainer.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Error al cargar menús: ", error);
+        }
+    }
+
+    // Manejar la selección de tarjetas (menú y modalidad).
+    function handleSelection(container, key) {
+        container.addEventListener('click', (e) => {
+            if (e.target.classList.contains('card')) {
+                [...container.children].forEach(child => child.classList.remove('selected'));
+                e.target.classList.add('selected');
+                seleccion[key] = key === 'menu' ? e.target.dataset.nombre : e.target.dataset.value;
+            }
         });
+    }
 
-        if (filteredReservations.length === 0) {
-            reservationsList.innerHTML = `<p>No hay reservas en esta categoría.</p>`;
+    handleSelection(menusContainer, 'menu');
+    handleSelection(modalidadContainer, 'modalidad');
+
+    // Manejar el paso de la etapa 1 a la 2.
+    btnNextStep.addEventListener('click', () => {
+        seleccion.comensales = document.getElementById('comensales').value;
+        if (!seleccion.menu || !seleccion.modalidad) {
+            alert('Por favor, selecciona un menú y una modalidad.');
             return;
         }
-
-        filteredReservations.forEach(doc => {
-            const reserva = doc.data();
-            const id = doc.id;
-            const fecha = new Date(reserva.fecha).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
-            
-            const reservationCard = document.createElement('div');
-            reservationCard.className = 'reserva-card';
-            reservationCard.innerHTML = `
-                <p><strong>Email:</strong> ${reserva.email}</p>
-                <p><strong>Fecha:</strong> ${fecha}</p>
-                <p><strong>Menú:</strong> ${reserva.menu}</p>
-                <p><strong>Dirección:</strong> ${reserva.direccion}</p>
-                ${reserva.alergia === 'si' ? `<p><strong>Alergias:</strong> ${reserva.alergiaDetalle}</p>` : ''}
-                <p><em>Estado: ${reserva.estado}</em></p>
-                ${reserva.motivoCancelacion ? `<div class="cancel-reason"><strong>Motivo:</strong> ${reserva.motivoCancelacion}</div>` : ''}
-                <div class="actions">
-                    <button onclick="updateReservationStatus('${id}', 'Confirmada')">Confirmar</button>
-                    <button onclick="updateReservationStatus('${id}', 'Pendiente')" class="btn-secondary">Pendiente</button>
-                    <button onclick="updateReservationStatus('${id}', 'Finalizada')" class="btn-secondary">Finalizar</button>
-                    <button onclick="updateReservationStatus('${id}', 'Cancelada')" class="btn-danger">Cancelar</button>
-                </div>
-            `;
-            reservationsList.appendChild(reservationCard);
-        });
-    };
-
-    // --- ESCUCHAR CAMBIOS EN FIRESTORE EN TIEMPO REAL ---
-    db.collection('reservations').orderBy('timestamp', 'desc').onSnapshot((querySnapshot) => {
-        currentReservations = querySnapshot.docs;
-        renderReservations();
+        resumenTexto.textContent = `${seleccion.menu}, para ${seleccion.comensales} personas. Modalidad: ${seleccion.modalidad.replace('-', ' ')}.`;
+        step1.classList.add('hidden');
+        step2.classList.remove('hidden');
     });
+
+    // Lógica del formulario (alergias y validación).
+    alergiaRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            alergiaDetalle.classList.toggle('hidden', e.target.value === 'no');
+        });
+    });
+
+    bookingForm.addEventListener('keyup', () => {
+        btnConfirm.disabled = !bookingForm.checkValidity();
+    });
+
+    // Enviar la reserva a Firestore.
+    bookingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        btnConfirm.disabled = true;
+        btnConfirm.textContent = 'Procesando...';
+        const reserva = {
+            ...seleccion,
+            alergia: document.querySelector('input[name="alergia"]:checked').value,
+            alergiaDetalle: alergiaDetalle.value,
+            fecha: document.getElementById('fecha').value,
+            direccion: document.getElementById('direccion').value,
+            email: document.getElementById('email').value,
+            estado: 'pendiente',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+            await db.collection('reservations').add(reserva);
+            alert('¡Reserva confirmada! Gracias por elegirnos.');
+            bookingForm.reset();
+            step2.classList.add('hidden');
+            step1.classList.remove('hidden');
+            [...menusContainer.children].forEach(child => child.classList.remove('selected'));
+            [...modalidadContainer.children].forEach(child => child.classList.remove('selected'));
+        } catch (error) {
+            console.error("Error al guardar la reserva: ", error);
+            alert('Hubo un problema al confirmar tu reserva.');
+        } finally {
+            btnConfirm.disabled = false;
+            btnConfirm.textContent = 'Confirmar Reserva';
+        }
+    });
+
+    // Iniciar la carga de los menús al cargar la página.
+    cargarMenus();
 });
