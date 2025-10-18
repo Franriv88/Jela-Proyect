@@ -120,8 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const menu = doc.data();
                 const card = document.createElement('div');
                 card.className = 'card';
-                card.dataset.id = doc.id;
-                card.dataset.nombre = menu.nombre;
+                card.dataset.id = doc.id; card.dataset.nombre = menu.nombre;
                 const formattedPrice = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(menu.precio || 0);
                 card.innerHTML = `<h3>${menu.nombre}</h3><p class="card-description">${menu.descripcion || ''}</p><p class="card-ideal">${menu.idealPara || ''}</p><p class="card-price">A partir de ${formattedPrice}</p>`;
                 menusContainer.appendChild(card);
@@ -132,91 +131,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ----- 4. FUNCIONES Y MANEJADORES DE EVENTOS -----
-
     btnComensalesUp.addEventListener('click', () => {
-        let currentValue = parseInt(comensalesInput.value);
-        comensalesInput.value = currentValue + 1;
-        seleccion.comensales = comensalesInput.value;
+        let val = parseInt(comensalesInput.value);
+        comensalesInput.value = val + 1;
+        seleccion.comensales = comensalesInput.value; // Guardamos como string, se parseará al guardar
     });
-
     btnComensalesDown.addEventListener('click', () => {
-        let currentValue = parseInt(comensalesInput.value);
-        if (currentValue > 1) {
-            comensalesInput.value = currentValue - 1;
-            seleccion.comensales = comensalesInput.value;
-        }
+        let val = parseInt(comensalesInput.value);
+        if (val > 1) { comensalesInput.value = val - 1; seleccion.comensales = comensalesInput.value; }
     });
 
     function validateSelection() {
-        const isMenuSelected = !!seleccion.menu;
-        const isModalidadSelected = !!seleccion.modalidad;
-        btnNextStep.disabled = !isMenuSelected || !isModalidadSelected;
-        selectionWarning.style.display = (isMenuSelected && isModalidadSelected) ? 'none' : 'block';
-        if (!isMenuSelected) {
-            selectionWarning.textContent = 'Debe elegir una Experiencia';
-        } else if (!isModalidadSelected) {
-            selectionWarning.textContent = 'Debe elegir una Modalidad';
-        }
+        const menuOK = !!seleccion.menu;
+        const modOK = !!seleccion.modalidad;
+        btnNextStep.disabled = !menuOK || !modOK;
+        selectionWarning.style.display = (menuOK && modOK) ? 'none' : 'block';
+        if (!menuOK) selectionWarning.textContent = 'Debe elegir una Experiencia';
+        else if (!modOK) selectionWarning.textContent = 'Debe elegir una Modalidad';
     }
 
     function handleSelection(container, key) {
         container.addEventListener('click', (e) => {
-            const clickedCard = e.target.closest('.card');
-            if (!clickedCard) return;
-            const isAlreadySelected = clickedCard.classList.contains('selected');
-            // Deselecciona todas las tarjetas en este contenedor
-            [...container.children].forEach(child => child.classList.remove('selected'));
-            if (isAlreadySelected) {
-                // Si se hizo clic en la ya seleccionada, la deselecciona
-                seleccion[key] = null;
-            } else {
-                // Si se hizo clic en una nueva, la selecciona
-                clickedCard.classList.add('selected');
-                // Almacena el valor relevante (nombre del menú o valor de modalidad)
-                seleccion[key] = clickedCard.dataset.nombre || clickedCard.dataset.value;
-            }
-            validateSelection(); // Revalida el estado del botón/aviso
+            const card = e.target.closest('.card');
+            if (!card) return;
+            const alreadySel = card.classList.contains('selected');
+            [...container.children].forEach(c => c.classList.remove('selected'));
+            if (alreadySel) { seleccion[key] = null; }
+            else { card.classList.add('selected'); seleccion[key] = card.dataset.nombre || card.dataset.value; }
+            validateSelection();
         });
     }
-
     handleSelection(menusContainer, 'menu');
     handleSelection(modalidadContainer, 'modalidad');
 
-    // Listener para el botón "Haz tu reserva" (Mostrar Modal)
     btnNextStep.addEventListener('click', () => {
-        seleccion.comensales = document.getElementById('comensales').value; // Asegura tomar el valor actual
+        seleccion.comensales = document.getElementById('comensales').value; // Asegura valor actual
         if (btnNextStep.disabled) return;
         resumenTexto.textContent = `${seleccion.menu}, para ${seleccion.comensales} personas. Modalidad: ${seleccion.modalidad.replace('-', ' ')}.`;
         modalContainer.classList.remove('hidden');
-        document.body.classList.add('modal-active'); // Opcional: Oscurece/desactiva fondo
+        document.body.classList.add('modal-active');
     });
 
-    // Listener para el botón "Volver" dentro de la Modal
     btnBack.addEventListener('click', () => {
         modalContainer.classList.add('hidden');
-        document.body.classList.remove('modal-active'); // Opcional
+        document.body.classList.remove('modal-active');
     });
 
-    // Lógica del formulario dentro de la modal
-    alergiaRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            alergiaDetalle.classList.toggle('hidden', e.target.value === 'no');
-        });
-    });
-
-    // Habilita el botón de confirmar solo si todos los campos requeridos están llenos
-    bookingForm.addEventListener('input', () => { // Usar 'input' es más reactivo que 'keyup'
-        btnConfirm.disabled = !bookingForm.checkValidity();
-    });
+    alergiaRadios.forEach(r => { r.addEventListener('change', (e) => { alergiaDetalle.classList.toggle('hidden', e.target.value === 'no'); }); });
+    bookingForm.addEventListener('input', () => { btnConfirm.disabled = !bookingForm.checkValidity(); });
 
     // Listener para el botón "Confirmar Reserva" (Enviar a Firestore)
     bookingForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         btnConfirm.disabled = true;
         btnConfirm.textContent = 'Procesando...';
-        // Construye el objeto reserva con todos los datos necesarios
+        // Aseguramos que comensales sea un número
+        const numComensales = parseInt(seleccion.comensales) || 1;
         const reserva = {
-            ...seleccion, // Incluye menu, modalidad, comensales
+            menu: seleccion.menu,
+            modalidad: seleccion.modalidad,
+            comensales: numComensales, // Usamos el número parseado
             alergia: document.querySelector('input[name="alergia"]:checked').value,
             alergiaDetalle: alergiaDetalle.value,
             fecha: document.getElementById('fecha').value,
@@ -234,24 +208,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Resetear formulario y estado
             bookingForm.reset();
             comensalesInput.value = 2; // Resetea contador
-            seleccion.comensales = 2; // Resetea estado
-            seleccion.menu = null; // Resetea selecciones
-            seleccion.modalidad = null;
-            [...menusContainer.children].forEach(child => child.classList.remove('selected'));
-            [...modalidadContainer.children].forEach(child => child.classList.remove('selected'));
-
-            // Ocultar la modal
+            seleccion = { menu: null, modalidad: null, comensales: 2 }; // Reset completo
+            [...menusContainer.children].forEach(c => c.classList.remove('selected'));
+            [...modalidadContainer.children].forEach(c => c.classList.remove('selected'));
             modalContainer.classList.add('hidden');
-            document.body.classList.remove('modal-active'); // Opcional
-
-            validateSelection(); // Revalida estado inicial (botón desactivado, aviso visible)
+            document.body.classList.remove('modal-active');
+            validateSelection();
 
         } catch (error) {
             console.error("Error al guardar la reserva: ", error);
             alert('Hubo un problema al confirmar tu reserva.');
         } finally {
             // Restaura el botón de confirmar
-            btnConfirm.disabled = false; // Se re-deshabilitará si el form está vacío
+            btnConfirm.disabled = !bookingForm.checkValidity(); // Re-evaluar disabled
             btnConfirm.textContent = 'Confirmar Reserva';
         }
     });

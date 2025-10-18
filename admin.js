@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 if (userDoc.exists && userDoc.data().role === 'admin') {
-                    // Asegúrate de tener este div en admin.html si usas roles
                     const adminLinksContainer = document.getElementById('admin-only-links');
                     if (adminLinksContainer) {
                         adminLinksContainer.innerHTML = `
@@ -37,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-    // Descomenta la siguiente línea si tienes el div id="admin-only-links" en admin.html
+    // Descomenta si tienes el div id="admin-only-links" en admin.html
     // checkUserRole();
 
     // --- Lógica de Pestañas ---
@@ -79,18 +78,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const reason = prompt("Por favor, ingresa el motivo de la cancelación:");
             if (reason) {
                 updateData.motivoCancelacion = reason;
-            } else {
-                return;
-            }
+            } else { return; }
         } else {
             updateData.motivoCancelacion = firebase.firestore.FieldValue.delete();
         }
-
         reservationRef.update(updateData)
             .catch((error) => console.error("Error al actualizar el estado: ", error));
     };
 
-    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS ---
+    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS (CORREGIDA) ---
     const renderReservations = () => {
         reservationsList.innerHTML = '<p>Cargando reservas...</p>';
 
@@ -111,22 +107,50 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredReservations.forEach(doc => {
             const reserva = doc.data();
             const id = doc.id;
+
+            // --- Formateo Fecha Evento ---
+            let fechaEventoObj = null;
             let fechaFormateada = 'Fecha inválida';
-            if (reserva.fecha && !isNaN(new Date(reserva.fecha))) {
-                 fechaFormateada = new Date(reserva.fecha).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+            if (reserva.fecha) {
+                fechaEventoObj = new Date(reserva.fecha.replace(' ', 'T'));
+                if (!isNaN(fechaEventoObj)) {
+                     fechaFormateada = fechaEventoObj.toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+                }
             }
 
-            let horaRegistro = 'No disponible';
+            // --- Formateo Hora Registro (CORREGIDO) ---
+            let horaRegistro = 'No disponible'; // <--- Variable correcta
             if (reserva.timestamp && reserva.timestamp.toDate) {
-                horaRegistro = reserva.timestamp.toDate().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const registroDate = reserva.timestamp.toDate();
+                // Asignamos a la variable correcta 'horaRegistro'
+                horaRegistro = registroDate.toLocaleString('es-ES', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }).replace(/\./g, ''); // Quitamos puntos
+            }
+
+            // --- Cálculo Contador Regresivo ---
+            let diasRestantesTexto = '';
+            if (fechaEventoObj && !isNaN(fechaEventoObj)) {
+                const hoy = new Date();
+                const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+                const inicioEvento = new Date(fechaEventoObj.getFullYear(), fechaEventoObj.getMonth(), fechaEventoObj.getDate());
+                const diffTiempo = inicioEvento.getTime() - inicioHoy.getTime();
+                const diffDias = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24));
+                if (diffDias > 0) diasRestantesTexto = `Faltan: ${diffDias} día${diffDias > 1 ? 's' : ''}`;
+                else if (diffDias === 0) diasRestantesTexto = '¡Es hoy!';
+                else diasRestantesTexto = 'Fecha pasada';
             }
 
             const reservationCard = document.createElement('div');
             reservationCard.className = 'reserva-card';
             reservationCard.innerHTML = `
-                <span class="registration-time">Hora de registro: ${horaRegistro}</span>
+                <div class="card-header-info">
+                    <span class="registration-time">Registro: ${horaRegistro}</span>
+                    <span class="countdown-timer">${diasRestantesTexto}</span>
+                </div>
                 <p><strong>Email:</strong> ${reserva.email || 'No especificado'}</p>
-                <p><strong>Fecha:</strong> ${fechaFormateada}</p>
+                <p><strong>Fecha Evento:</strong> ${fechaFormateada}</p>
                 <p><strong>Menú:</strong> ${reserva.menu || 'No especificado'}</p>
                 <p><strong>Comensales:</strong> ${reserva.comensales || 'No especificado'}</p>
                 <p><strong>Modalidad:</strong> ${reserva.modalidad || 'No especificado'}</p>
@@ -148,11 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ESCUCHAR CAMBIOS EN FIRESTORE ---
     db.collection('reservations').orderBy('timestamp', 'desc')
       .onSnapshot((querySnapshot) => {
-          console.log("Reservas recibidas en admin.js:", querySnapshot.docs.length); // Log específico
           currentReservations = querySnapshot.docs;
           renderReservations();
       }, (error) => {
-          console.error("Error al escuchar las reservas en admin.js: ", error); // Log específico
+          console.error("Error al escuchar las reservas en admin.js: ", error);
           reservationsList.innerHTML = '<p>Error al cargar las reservas. Revisa la consola.</p>';
       });
 });

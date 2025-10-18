@@ -24,26 +24,31 @@
         <main id="booking-process">
             <section id="step-1">
                 <h2>1. Elige tu Experiencia</h2>
+                <label for="">Selecciona un menú:</label>
                 <div id="menus-container" class="cards-container">
                     </div>
 
-                <div class="comensales-container">
-                    <label for="comensales">Cantidad de Comensales:</label>
-                    <div class="comensales-label">
-                        <img src="Recursos/icons/avatar-gold.png" alt="" class="label-icon">
-                    </div>
-                    <div class="comensales-input-wrapper">
-                        <img src="Recursos/icons/arrow.png" alt="Menos" id="btn-comensales-down" class="stepper-arrow">
+                    <div class="comensales-section">
+    <label for="comensales">Cantidad de comensales:</label>
 
-                        <input type="number" id="comensales" value="2" min="1">
+    <div class="comensales-input-wrapper">
+        <img src="Recursos/icons/avatar-gold.png" alt="" class="label-icon">
+        <input type="number" id="comensales" value="2" min="1">
+        <div class="arrows-container">
+            <img src="Recursos/icons/arrow.png" alt="Más" id="btn-comensales-up" class="stepper-arrow arrow-up">
+            <img src="Recursos/icons/arrow.png" alt="Menos" id="btn-comensales-down" class="stepper-arrow arrow-down">
+        </div>
+    </div>
+</div>
 
-                        <img src="Recursos/icons/arrow.png" alt="Más" id="btn-comensales-up" class="stepper-arrow">
-                    </div>
-                </div>
-
+                <label for="">Modalidad:</label>
                 <div id="modalidad-container" class="cards-container">
-                    <div class="card" data-value="chef-en-casa">Chef en Casa</div>
-                    <div class="card" data-value="delivery">Delivery</div>
+                    <div class="card" data-value="chef-en-casa">Chef en Casa
+                        <img class="iconos" src="./Recursos/icons/cooking-black.png" alt="">
+                    </div>
+                    <div class="card" data-value="delivery">Delivery
+                        <img class="iconos" src="./Recursos/icons/delivery-black.png" alt="">
+                    </div>
                 </div>
 
                 <button id="btn-next-step">Haz tu Reserva</button>
