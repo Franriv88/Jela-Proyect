@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // --- LÓGICA DEL SISTEMA DE RESERVAS ---
+
+    // ----- 1. REFERENCIAS A ELEMENTOS DEL DOM -----
     const menusContainer = document.getElementById('menus-container');
     const modalidadContainer = document.getElementById('modalidad-container');
     const step1 = document.getElementById('step-1');
@@ -56,19 +58,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const alergiaDetalle = document.getElementById('alergia-detalle');
     const btnConfirm = document.getElementById('btn-confirm');
     
+    const btnComensalesUp = document.getElementById('btn-comensales-up');
+    const btnComensalesDown = document.getElementById('btn-comensales-down');
+    const comensalesInput = document.getElementById('comensales');
+
     // Crear y añadir el aviso de selección
     const selectionWarning = document.createElement('p');
     selectionWarning.id = 'selection-warning';
     selectionWarning.textContent = 'Debe elegir una Experiencia';
-    btnNextStep.insertAdjacentElement('beforebegin', selectionWarning);
+    
+    // ***** ¡CAMBIO REALIZADO AQUÍ! *****
+    // Lo movemos para que esté después del contenedor de modalidad
+    modalidadContainer.insertAdjacentElement('afterend', selectionWarning);
 
+    // ----- 2. ESTADO DE LA APLICACIÓN -----
     let seleccion = {
         menu: null,
         modalidad: null,
-        comensales: 2
+        comensales: 2 // Valor inicial
     };
     let blockedDates = [];
 
+    // ----- 3. INICIALIZACIÓN (Firestore, Flatpickr) -----
+    
     // Cargar disponibilidad
     try {
         const snapshot = await db.collection('availability').get();
@@ -99,19 +111,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 card.dataset.id = doc.id;
                 card.dataset.nombre = menu.nombre;
                 const formattedPrice = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(menu.precio || 0);
-
-                card.innerHTML = `
-                    <h3>${menu.nombre}</h3>
-                    <p class="card-description">${menu.descripcion || ''}</p>
-                    <p class="card-ideal">${menu.idealPara || ''}</p>
-                    <p class="card-price">A partir de ${formattedPrice}</p>
-                `;
+                card.innerHTML = `<h3>${menu.nombre}</h3><p class="card-description">${menu.descripcion || ''}</p><p class="card-ideal">${menu.idealPara || ''}</p><p class="card-price">A partir de ${formattedPrice}</p>`;
                 menusContainer.appendChild(card);
             });
         } catch (error) {
             console.error("Error al cargar menús: ", error);
         }
     }
+
+    // ----- 4. FUNCIONES Y MANEJADORES DE EVENTOS -----
+
+    btnComensalesUp.addEventListener('click', () => {
+        let currentValue = parseInt(comensalesInput.value);
+        comensalesInput.value = currentValue + 1;
+        seleccion.comensales = comensalesInput.value;
+    });
+
+    btnComensalesDown.addEventListener('click', () => {
+        let currentValue = parseInt(comensalesInput.value);
+        if (currentValue > 1) {
+            comensalesInput.value = currentValue - 1;
+            seleccion.comensales = comensalesInput.value;
+        }
+    });
 
     // Función de validación
     function validateSelection() {
@@ -177,6 +199,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             await db.collection('reservations').add(reserva);
             alert('¡Reserva confirmada! Gracias por elegirnos.');
             bookingForm.reset();
+            comensalesInput.value = 2;
+            seleccion.comensales = 2;
             step2.classList.add('hidden');
             step1.classList.remove('hidden');
             validateSelection();
@@ -189,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Llamadas iniciales
+    // ----- 5. LLAMADAS INICIALES -----
     await cargarMenus();
     validateSelection();
 });

@@ -133,6 +133,7 @@ form label {
     display: block;
     margin-top: 15px;
     font-weight: bold;
+    color: var(--light-gray);
 }
 
 form input[type="text"],
@@ -315,16 +316,18 @@ button:disabled {
     flex-direction: column;
     flex: 1; 
     min-width: 70px;
-    background-color: #e6c457;
+    background-color: var(--light-gray);
 }
 
-.card:hover {
+/* .card:hover {
     transform: translateY(-5px);
-}
+} */
 
 .card.selected {
     border-color: var(--secondary-color);
     box-shadow: 0 0 15px rgba(231, 185, 60, 0.5);
+    background-color: #e6c457;
+    transform: translateY(-5px);
 }
 
 .card h3 {
@@ -356,4 +359,70 @@ button:disabled {
     color: var(--secondary-color);
     font-weight: bold;
     margin-top: 15px;
+}
+
+
+
+/* --- ESTILOS PARA EL CONTROL DE COMENSALES --- */
+
+.comensales-container {
+    display: flex;
+    justify-content: space-between; /* Pone el label a la izq y el input a la der */
+    align-items: center;
+    margin: 25px 0; /* Le da un poco de espacio vertical */
+    color: var(--light-gray);
+}
+
+.comensales-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    color: var(--light-gray);
+}
+
+.label-icon {
+    width: 20px;
+    opacity: 0.7;
+}
+
+.comensales-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Espacio entre las flechas y el número */
+}
+
+.stepper-arrow {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: all 0.2s ease;
+}
+
+.stepper-arrow:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Estilo del input de comensales */
+#comensales {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--primary-color); /* Una línea sutil abajo */
+    width: 40px;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Ocultar flechas nativas del input number */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+input[type=number] {
+    -moz-appearance: textfield; /* Para Firefox */
 }

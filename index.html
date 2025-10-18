@@ -27,8 +27,19 @@
                 <div id="menus-container" class="cards-container">
                     </div>
 
-                <label for="comensales">Cantidad de Comensales:</label>
-                <input type="number" id="comensales" value="2" min="1">
+                <div class="comensales-container">
+                    <label for="comensales">Cantidad de Comensales:</label>
+                    <div class="comensales-label">
+                        <img src="Recursos/icons/avatar-gold.png" alt="" class="label-icon">
+                    </div>
+                    <div class="comensales-input-wrapper">
+                        <img src="Recursos/icons/arrow.png" alt="Menos" id="btn-comensales-down" class="stepper-arrow">
+
+                        <input type="number" id="comensales" value="2" min="1">
+
+                        <img src="Recursos/icons/arrow.png" alt="Más" id="btn-comensales-up" class="stepper-arrow">
+                    </div>
+                </div>
 
                 <div id="modalidad-container" class="cards-container">
                     <div class="card" data-value="chef-en-casa">Chef en Casa</div>
