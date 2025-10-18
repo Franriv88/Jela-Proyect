@@ -49,32 +49,36 @@
                 <button id="btn-next-step">Haz tu Reserva</button>
             </section>
 
-            <section id="step-2" class="hidden">
-                <h2>2. Completa tus Datos</h2>
-                
-                <div id="resumen">
-                    <h3>Resumen de tu pedido:</h3>
-                    <p id="resumen-texto"></p>
-                </div>
+            <div id="modal-container" class="modal-overlay hidden">
+    <div class="modal-content">
+        <button id="btn-back" class="modal-back-button">&larr; Volver</button>
 
-                <form id="booking-form">
-                    <label>¿Tienes alguna alergia?</label>
-                    <input type="radio" name="alergia" value="no" checked> No
-                    <input type="radio" name="alergia" value="si"> Sí
-                    <textarea id="alergia-detalle" class="hidden" placeholder="Especifica tus alergias..."></textarea>
-                    
-                    <label for="fecha">Fecha y Hora:</label>
-                    <input type="text" id="fecha" required placeholder="Selecciona una fecha...">
-                    
-                    <label for="direccion">Dirección (Calle y Altura):</label>
-                    <input type="text" id="direccion" placeholder="Ej: Av. Corrientes 1234" required>
-                    
-                    <label for="email">Tu Correo Electrónico:</label>
-                    <input type="email" id="email" placeholder="nombre@ejemplo.com" required>
-                    
-                    <button type="submit" id="btn-confirm" disabled>Confirmar Reserva</button>
-                </form>
-            </section>
+        <h2>2. Completa tus Datos</h2>
+
+        <div id="resumen">
+            <h3>Resumen de tu pedido:</h3>
+            <p id="resumen-texto"></p>
+        </div>
+
+        <form id="booking-form">
+            <label>¿Tienes alguna alergia?</label>
+            <input type="radio" name="alergia" value="no" checked> No
+            <input type="radio" name="alergia" value="si"> Sí
+            <textarea id="alergia-detalle" class="hidden" placeholder="Especifica tus alergias..."></textarea>
+
+            <label for="fecha">Fecha y Hora:</label>
+            <input type="text" id="fecha" required placeholder="Selecciona una fecha...">
+
+            <label for="direccion">Dirección (Calle y Altura):</label>
+            <input type="text" id="direccion" placeholder="Ej: Av. Corrientes 1234" required>
+
+            <label for="email">Tu Correo Electrónico:</label>
+            <input type="email" id="email" placeholder="nombre@ejemplo.com" required>
+
+            <button type="submit" id="btn-confirm" disabled>Confirmar Reserva</button>
+        </form>
+    </div>
+</div>
         </main>
     </div>
 

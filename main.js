@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
     // --- LÓGICA DEL CARRUSEL EN ABANICO ---
-    const mainHeaderImage = 'Recursos/Img/portada.jpg';
+    const mainHeaderImage = 'Recursos/Img/portada.jpg'; // Imagen principal fija del header
     const carouselImages = [
         'Recursos/Img/gettyimages-1789034712-612x612.jpg',
         'Recursos/Img/images.jpg',
@@ -9,36 +9,59 @@ document.addEventListener('DOMContentLoaded', async () => {
         'Recursos/Img/portada.jpg',
         'Recursos/Img/licensed-image (2).jpg',
         'Recursos/Img/licensed-image.jpg'
+        // Puedes agregar más imágenes aquí y el sistema las incluirá en el ciclo
     ];
+
     const mainImageContainer = document.querySelector('.carousel-main-image');
     const thumbnailsContainer = document.querySelector('.carousel-thumbnails');
-    let currentIndex = 0;
+    let currentIndex = 0; // Controla qué imagen está al frente del abanico
 
     if (mainImageContainer && carouselImages.length > 0) {
+        // Cargar la imagen principal del header.
         mainImageContainer.innerHTML = `<img src="${mainHeaderImage}" alt="Bienvenida a Jelambi Chef">`;
         const mainImage = mainImageContainer.querySelector('img');
+
+        // Función para renderizar y actualizar las miniaturas en abanico.
         const renderThumbnails = () => {
-            thumbnailsContainer.innerHTML = '';
+            thumbnailsContainer.innerHTML = ''; // Limpiar miniaturas existentes para redibujar
+
             const visibleThumbnails = 3;
             for (let i = 0; i < visibleThumbnails; i++) {
+                // Usamos el operador % (módulo) para crear un bucle infinito y seguro
                 const imageIndex = (currentIndex + i) % carouselImages.length;
-                if (i > 0 && imageIndex === currentIndex) break;
+
+                // Si solo hay 1 o 2 imágenes, evita repetir la misma en el abanico
+                if (i > 0 && imageIndex === currentIndex && carouselImages.length <= visibleThumbnails) {
+                   continue;
+                }
+                 if(carouselImages.length <= i) break; // No intentes mostrar más miniaturas de las que hay
+
                 const imageUrl = carouselImages[imageIndex];
+
                 const thumb = document.createElement('img');
                 thumb.src = imageUrl;
-                thumb.className = `thumbnail pos-${i + 1}`;
+                thumb.className = `thumbnail pos-${i + 1}`; // Asigna la clase de posición
+
                 thumb.addEventListener('click', () => {
+                    // La imagen clickeada se convierte en la principal del header
                     mainImage.style.opacity = '0';
                     setTimeout(() => {
                         mainImage.src = imageUrl;
                         mainImage.style.opacity = '1';
-                    }, 400);
+                    }, 400); // Coincide con transición CSS
+
+                    // La siguiente imagen en la lista pasa a estar al frente del abanico
                     currentIndex = (imageIndex + 1) % carouselImages.length;
+
+                    // Volver a dibujar el abanico con el nuevo orden
                     renderThumbnails();
                 });
+
                 thumbnailsContainer.appendChild(thumb);
             }
         };
+
+        // Renderizar las miniaturas por primera vez al cargar la página.
         renderThumbnails();
     }
     // --- FIN DE LA LÓGICA DEL CARRUSEL ---
@@ -50,25 +73,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const menusContainer = document.getElementById('menus-container');
     const modalidadContainer = document.getElementById('modalidad-container');
     const step1 = document.getElementById('step-1');
-    const step2 = document.getElementById('step-2');
+    const modalContainer = document.getElementById('modal-container'); // Referencia a la modal
     const btnNextStep = document.getElementById('btn-next-step');
     const bookingForm = document.getElementById('booking-form');
     const resumenTexto = document.getElementById('resumen-texto');
     const alergiaRadios = document.querySelectorAll('input[name="alergia"]');
     const alergiaDetalle = document.getElementById('alergia-detalle');
     const btnConfirm = document.getElementById('btn-confirm');
-    
     const btnComensalesUp = document.getElementById('btn-comensales-up');
     const btnComensalesDown = document.getElementById('btn-comensales-down');
     const comensalesInput = document.getElementById('comensales');
+    const btnBack = document.getElementById('btn-back'); // Botón Volver
 
     // Crear y añadir el aviso de selección
     const selectionWarning = document.createElement('p');
     selectionWarning.id = 'selection-warning';
     selectionWarning.textContent = 'Debe elegir una Experiencia';
-    
-    // ***** ¡CAMBIO REALIZADO AQUÍ! *****
-    // Lo movemos para que esté después del contenedor de modalidad
     modalidadContainer.insertAdjacentElement('afterend', selectionWarning);
 
     // ----- 2. ESTADO DE LA APLICACIÓN -----
@@ -79,9 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     let blockedDates = [];
 
-    // ----- 3. INICIALIZACIÓN (Firestore, Flatpickr) -----
-    
-    // Cargar disponibilidad
+    // ----- 3. INICIALIZACIÓN -----
     try {
         const snapshot = await db.collection('availability').get();
         blockedDates = snapshot.docs.map(doc => doc.id);
@@ -89,17 +107,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Error al cargar la disponibilidad:", error);
     }
 
-    // Inicializar Flatpickr
     flatpickr("#fecha", {
-        enableTime: true,
-        dateFormat: "Y-m-d H:i",
-        locale: "es",
-        minDate: "today",
-        disable: blockedDates,
-        time_24hr: true
+        enableTime: true, dateFormat: "Y-m-d H:i", locale: "es",
+        minDate: "today", disable: blockedDates, time_24hr: true
     });
 
-    // Cargar los menús desde Firestore
     async function cargarMenus() {
         try {
             const querySnapshot = await db.collection('menus').get();
@@ -135,7 +147,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Función de validación
     function validateSelection() {
         const isMenuSelected = !!seleccion.menu;
         const isModalidadSelected = !!seleccion.modalidad;
@@ -148,72 +159,104 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Manejar la selección de tarjetas
     function handleSelection(container, key) {
         container.addEventListener('click', (e) => {
             const clickedCard = e.target.closest('.card');
             if (!clickedCard) return;
-
             const isAlreadySelected = clickedCard.classList.contains('selected');
+            // Deselecciona todas las tarjetas en este contenedor
             [...container.children].forEach(child => child.classList.remove('selected'));
-            
             if (isAlreadySelected) {
+                // Si se hizo clic en la ya seleccionada, la deselecciona
                 seleccion[key] = null;
             } else {
+                // Si se hizo clic en una nueva, la selecciona
                 clickedCard.classList.add('selected');
+                // Almacena el valor relevante (nombre del menú o valor de modalidad)
                 seleccion[key] = clickedCard.dataset.nombre || clickedCard.dataset.value;
             }
-            validateSelection();
+            validateSelection(); // Revalida el estado del botón/aviso
         });
     }
 
     handleSelection(menusContainer, 'menu');
     handleSelection(modalidadContainer, 'modalidad');
 
-    // Lógica del formulario y envío
+    // Listener para el botón "Haz tu reserva" (Mostrar Modal)
     btnNextStep.addEventListener('click', () => {
-        seleccion.comensales = document.getElementById('comensales').value;
+        seleccion.comensales = document.getElementById('comensales').value; // Asegura tomar el valor actual
         if (btnNextStep.disabled) return;
         resumenTexto.textContent = `${seleccion.menu}, para ${seleccion.comensales} personas. Modalidad: ${seleccion.modalidad.replace('-', ' ')}.`;
-        step1.classList.add('hidden');
-        step2.classList.remove('hidden');
+        modalContainer.classList.remove('hidden');
+        document.body.classList.add('modal-active'); // Opcional: Oscurece/desactiva fondo
     });
 
+    // Listener para el botón "Volver" dentro de la Modal
+    btnBack.addEventListener('click', () => {
+        modalContainer.classList.add('hidden');
+        document.body.classList.remove('modal-active'); // Opcional
+    });
+
+    // Lógica del formulario dentro de la modal
     alergiaRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             alergiaDetalle.classList.toggle('hidden', e.target.value === 'no');
         });
     });
 
-    bookingForm.addEventListener('keyup', () => {
+    // Habilita el botón de confirmar solo si todos los campos requeridos están llenos
+    bookingForm.addEventListener('input', () => { // Usar 'input' es más reactivo que 'keyup'
         btnConfirm.disabled = !bookingForm.checkValidity();
     });
 
+    // Listener para el botón "Confirmar Reserva" (Enviar a Firestore)
     bookingForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         btnConfirm.disabled = true;
         btnConfirm.textContent = 'Procesando...';
-        const reserva = { ...seleccion, alergia: document.querySelector('input[name="alergia"]:checked').value, alergiaDetalle: alergiaDetalle.value, fecha: document.getElementById('fecha').value, direccion: document.getElementById('direccion').value, email: document.getElementById('email').value, estado: 'pendiente', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+        // Construye el objeto reserva con todos los datos necesarios
+        const reserva = {
+            ...seleccion, // Incluye menu, modalidad, comensales
+            alergia: document.querySelector('input[name="alergia"]:checked').value,
+            alergiaDetalle: alergiaDetalle.value,
+            fecha: document.getElementById('fecha').value,
+            direccion: document.getElementById('direccion').value,
+            email: document.getElementById('email').value,
+            estado: 'pendiente',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp() // Hora del servidor
+        };
 
         try {
+            // Guarda en Firestore
             await db.collection('reservations').add(reserva);
             alert('¡Reserva confirmada! Gracias por elegirnos.');
+
+            // Resetear formulario y estado
             bookingForm.reset();
-            comensalesInput.value = 2;
-            seleccion.comensales = 2;
-            step2.classList.add('hidden');
-            step1.classList.remove('hidden');
-            validateSelection();
+            comensalesInput.value = 2; // Resetea contador
+            seleccion.comensales = 2; // Resetea estado
+            seleccion.menu = null; // Resetea selecciones
+            seleccion.modalidad = null;
+            [...menusContainer.children].forEach(child => child.classList.remove('selected'));
+            [...modalidadContainer.children].forEach(child => child.classList.remove('selected'));
+
+            // Ocultar la modal
+            modalContainer.classList.add('hidden');
+            document.body.classList.remove('modal-active'); // Opcional
+
+            validateSelection(); // Revalida estado inicial (botón desactivado, aviso visible)
+
         } catch (error) {
             console.error("Error al guardar la reserva: ", error);
             alert('Hubo un problema al confirmar tu reserva.');
         } finally {
-            btnConfirm.disabled = false;
+            // Restaura el botón de confirmar
+            btnConfirm.disabled = false; // Se re-deshabilitará si el form está vacío
             btnConfirm.textContent = 'Confirmar Reserva';
         }
     });
 
     // ----- 5. LLAMADAS INICIALES -----
-    await cargarMenus();
-    validateSelection();
+    await cargarMenus(); // Carga los menús al inicio
+    validateSelection(); // Asegura estado inicial correcto del botón y aviso
 });

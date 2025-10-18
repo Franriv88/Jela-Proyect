@@ -1,37 +1,34 @@
 // --- Bloque de Seguridad: Proteger la ruta ---
-// Se ejecuta de inmediato para verificar si el usuario ha iniciado sesión.
 firebase.auth().onAuthStateChanged((user) => {
     if (!user) {
-        // Si no hay usuario, redirigir inmediatamente a la página de login.
         window.location.href = 'login.html';
     }
 });
 
 // --- Lógica Principal del Panel de Admin ---
-// Se ejecuta solo después de que toda la página HTML se ha cargado.
 document.addEventListener('DOMContentLoaded', () => {
-    // Referencias a los elementos del DOM
     const reservationsList = document.getElementById('reservations-list');
     const btnChangePassword = document.getElementById('btn-change-password');
     const btnLogout = document.getElementById('btn-logout');
     const tabs = document.querySelectorAll('.tabs button');
 
-    let currentReservations = []; // Almacenamos todas las reservas aquí
-    let activeTab = 'proximas';   // La pestaña activa por defecto
+    let currentReservations = [];
+    let activeTab = 'proximas';
 
     // --- Lógica para mostrar enlaces de Admin ---
-    // (Asegúrate de tener el div id="admin-only-links" en admin.html si usas roles)
     const checkUserRole = async () => {
         const user = firebase.auth().currentUser;
         if (user) {
             try {
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 if (userDoc.exists && userDoc.data().role === 'admin') {
+                    // Asegúrate de tener este div en admin.html si usas roles
                     const adminLinksContainer = document.getElementById('admin-only-links');
                     if (adminLinksContainer) {
                         adminLinksContainer.innerHTML = `
                             <a href="carousel-admin.html" class="nav-link">Gestionar Carrusel</a>
                             <a href="menu-admin.html" class="nav-link">Gestionar Menús</a>
+                            <a href="availability.html" class="nav-link">Gestionar Disponibilidad</a>
                         `;
                     }
                 }
@@ -40,7 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-    checkUserRole(); // Llamar a la función al cargar la página
+    // Descomenta la siguiente línea si tienes el div id="admin-only-links" en admin.html
+    // checkUserRole();
 
     // --- Lógica de Pestañas ---
     tabs.forEach(tab => {
@@ -52,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Lógica de Usuario (Logout y Cambiar Contraseña) ---
+    // --- Lógica de Usuario ---
     btnLogout.addEventListener('click', () => {
         if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
             firebase.auth().signOut().catch((error) => console.error("Error al cerrar sesión:", error));
@@ -72,20 +70,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- FUNCIÓN PARA ACTUALIZAR EL ESTADO DE LA RESERVA ---
+    // --- FUNCIÓN PARA ACTUALIZAR EL ESTADO ---
     window.updateReservationStatus = (id, newStatus) => {
         const reservationRef = db.collection('reservations').doc(id);
         let updateData = { estado: newStatus };
 
         if (newStatus === 'Cancelada') {
-            const reason = prompt("Por favor, ingresa el motivo de la cancelación (ej: 'Cancelado por el cliente')");
+            const reason = prompt("Por favor, ingresa el motivo de la cancelación:");
             if (reason) {
                 updateData.motivoCancelacion = reason;
             } else {
-                return; // Si el usuario no pone un motivo, no se hace el cambio
+                return;
             }
         } else {
-            // Si el nuevo estado NO es 'Cancelada', eliminamos el campo del motivo.
             updateData.motivoCancelacion = firebase.firestore.FieldValue.delete();
         }
 
@@ -93,22 +90,16 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch((error) => console.error("Error al actualizar el estado: ", error));
     };
 
-    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS SEGÚN LA PESTAÑA ACTIVA ---
+    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS ---
     const renderReservations = () => {
-        reservationsList.innerHTML = '<p>Cargando reservas...</p>'; // Mostrar mensaje mientras carga
+        reservationsList.innerHTML = '<p>Cargando reservas...</p>';
 
         const filteredReservations = currentReservations.filter(doc => {
             const status = doc.data().estado;
-            if (activeTab === 'proximas') {
-                return status !== 'Finalizada' && status !== 'Cancelada';
-            }
-            if (activeTab === 'finalizadas') {
-                return status === 'Finalizada';
-            }
-            if (activeTab === 'canceladas') {
-                return status === 'Cancelada';
-            }
-            return false; // Por si acaso
+            if (activeTab === 'proximas') return status !== 'Finalizada' && status !== 'Cancelada';
+            if (activeTab === 'finalizadas') return status === 'Finalizada';
+            if (activeTab === 'canceladas') return status === 'Cancelada';
+            return false;
         });
 
         if (filteredReservations.length === 0) {
@@ -116,20 +107,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        reservationsList.innerHTML = ''; // Limpiar antes de añadir las tarjetas
+        reservationsList.innerHTML = '';
         filteredReservations.forEach(doc => {
             const reserva = doc.data();
             const id = doc.id;
-            // Manejar posible fecha inválida
             let fechaFormateada = 'Fecha inválida';
             if (reserva.fecha && !isNaN(new Date(reserva.fecha))) {
                  fechaFormateada = new Date(reserva.fecha).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
             }
 
+            let horaRegistro = 'No disponible';
+            if (reserva.timestamp && reserva.timestamp.toDate) {
+                horaRegistro = reserva.timestamp.toDate().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
 
             const reservationCard = document.createElement('div');
             reservationCard.className = 'reserva-card';
             reservationCard.innerHTML = `
+                <span class="registration-time">Hora de registro: ${horaRegistro}</span>
                 <p><strong>Email:</strong> ${reserva.email || 'No especificado'}</p>
                 <p><strong>Fecha:</strong> ${fechaFormateada}</p>
                 <p><strong>Menú:</strong> ${reserva.menu || 'No especificado'}</p>
@@ -150,14 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- ESCUCHAR CAMBIOS EN FIRESTORE EN TIEMPO REAL ---
+    // --- ESCUCHAR CAMBIOS EN FIRESTORE ---
     db.collection('reservations').orderBy('timestamp', 'desc')
       .onSnapshot((querySnapshot) => {
-          console.log("Reservas recibidas:", querySnapshot.docs.length); // Log para depurar
-          currentReservations = querySnapshot.docs; // Guardar todos los datos
-          renderReservations(); // Volver a renderizar con el filtro de la pestaña actual
+          console.log("Reservas recibidas en admin.js:", querySnapshot.docs.length); // Log específico
+          currentReservations = querySnapshot.docs;
+          renderReservations();
       }, (error) => {
-          console.error("Error al escuchar las reservas: ", error); // Log de error
+          console.error("Error al escuchar las reservas en admin.js: ", error); // Log específico
           reservationsList.innerHTML = '<p>Error al cargar las reservas. Revisa la consola.</p>';
       });
 });
