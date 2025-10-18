@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
-    // --- LÓGICA DEL CARRUSEL EN ABANICO (VERSIÓN FINAL) ---
-
+    // --- LÓGICA DEL CARRUSEL EN ABANICO ---
     const mainHeaderImage = 'Recursos/Img/portada.jpg';
     const carouselImages = [
         'Recursos/Img/gettyimages-1789034712-612x612.jpg',
@@ -11,59 +10,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         'Recursos/Img/licensed-image (2).jpg',
         'Recursos/Img/licensed-image.jpg'
     ];
-
     const mainImageContainer = document.querySelector('.carousel-main-image');
     const thumbnailsContainer = document.querySelector('.carousel-thumbnails');
-    let currentIndex = 0; // Siempre apunta al índice de la imagen en la posición 1 (adelante)
+    let currentIndex = 0;
 
     if (mainImageContainer && carouselImages.length > 0) {
         mainImageContainer.innerHTML = `<img src="${mainHeaderImage}" alt="Bienvenida a Jelambi Chef">`;
         const mainImage = mainImageContainer.querySelector('img');
-
         const renderThumbnails = () => {
             thumbnailsContainer.innerHTML = '';
-            
             const visibleThumbnails = 3;
             for (let i = 0; i < visibleThumbnails; i++) {
-                // Usamos el operador % (módulo) para crear un bucle infinito y seguro
                 const imageIndex = (currentIndex + i) % carouselImages.length;
-                
-                // Si solo hay 1 o 2 imágenes, no queremos repetir la misma en el abanico
                 if (i > 0 && imageIndex === currentIndex) break;
-
                 const imageUrl = carouselImages[imageIndex];
-
                 const thumb = document.createElement('img');
                 thumb.src = imageUrl;
                 thumb.className = `thumbnail pos-${i + 1}`;
-                
                 thumb.addEventListener('click', () => {
-                    // 1. La imagen clickeada se convierte en la principal del header
                     mainImage.style.opacity = '0';
                     setTimeout(() => {
                         mainImage.src = imageUrl;
                         mainImage.style.opacity = '1';
                     }, 400);
-
-                    // 2. La siguiente imagen en la lista pasa a estar al frente del abanico
                     currentIndex = (imageIndex + 1) % carouselImages.length;
-                    
-                    // 3. Volver a dibujar el abanico con el nuevo orden
                     renderThumbnails();
                 });
-                
                 thumbnailsContainer.appendChild(thumb);
             }
         };
-
-        renderThumbnails(); // Dibujar el carrusel por primera vez
+        renderThumbnails();
     }
-
     // --- FIN DE LA LÓGICA DEL CARRUSEL ---
 
 
-    // --- LÓGICA DEL SISTEMA DE RESERVAS (SIN CAMBIOS) ---
-
+    // --- LÓGICA DEL SISTEMA DE RESERVAS ---
     const menusContainer = document.getElementById('menus-container');
     const modalidadContainer = document.getElementById('modalidad-container');
     const step1 = document.getElementById('step-1');
@@ -74,6 +55,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const alergiaRadios = document.querySelectorAll('input[name="alergia"]');
     const alergiaDetalle = document.getElementById('alergia-detalle');
     const btnConfirm = document.getElementById('btn-confirm');
+    
+    // Crear y añadir el aviso de selección
+    const selectionWarning = document.createElement('p');
+    selectionWarning.id = 'selection-warning';
+    selectionWarning.textContent = 'Debe elegir una Experiencia';
+    btnNextStep.insertAdjacentElement('beforebegin', selectionWarning);
 
     let seleccion = {
         menu: null,
@@ -82,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     let blockedDates = [];
 
+    // Cargar disponibilidad
     try {
         const snapshot = await db.collection('availability').get();
         blockedDates = snapshot.docs.map(doc => doc.id);
@@ -89,6 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Error al cargar la disponibilidad:", error);
     }
 
+    // Inicializar Flatpickr
     flatpickr("#fecha", {
         enableTime: true,
         dateFormat: "Y-m-d H:i",
@@ -98,6 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         time_24hr: true
     });
 
+    // Cargar los menús desde Firestore
     async function cargarMenus() {
         try {
             const querySnapshot = await db.collection('menus').get();
@@ -105,10 +95,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             querySnapshot.forEach((doc) => {
                 const menu = doc.data();
                 const card = document.createElement('div');
-                card.classList.add('card');
-                card.textContent = menu.nombre;
+                card.className = 'card';
                 card.dataset.id = doc.id;
                 card.dataset.nombre = menu.nombre;
+                const formattedPrice = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(menu.precio || 0);
+
+                card.innerHTML = `
+                    <h3>${menu.nombre}</h3>
+                    <p class="card-description">${menu.descripcion || ''}</p>
+                    <p class="card-ideal">${menu.idealPara || ''}</p>
+                    <p class="card-price">A partir de ${formattedPrice}</p>
+                `;
                 menusContainer.appendChild(card);
             });
         } catch (error) {
@@ -116,25 +113,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Función de validación
+    function validateSelection() {
+        const isMenuSelected = !!seleccion.menu;
+        const isModalidadSelected = !!seleccion.modalidad;
+        btnNextStep.disabled = !isMenuSelected || !isModalidadSelected;
+        selectionWarning.style.display = (isMenuSelected && isModalidadSelected) ? 'none' : 'block';
+        if (!isMenuSelected) {
+            selectionWarning.textContent = 'Debe elegir una Experiencia';
+        } else if (!isModalidadSelected) {
+            selectionWarning.textContent = 'Debe elegir una Modalidad';
+        }
+    }
+
+    // Manejar la selección de tarjetas
     function handleSelection(container, key) {
         container.addEventListener('click', (e) => {
-            if (e.target.classList.contains('card')) {
-                [...container.children].forEach(child => child.classList.remove('selected'));
-                e.target.classList.add('selected');
-                seleccion[key] = key === 'menu' ? e.target.dataset.nombre : e.target.dataset.value;
+            const clickedCard = e.target.closest('.card');
+            if (!clickedCard) return;
+
+            const isAlreadySelected = clickedCard.classList.contains('selected');
+            [...container.children].forEach(child => child.classList.remove('selected'));
+            
+            if (isAlreadySelected) {
+                seleccion[key] = null;
+            } else {
+                clickedCard.classList.add('selected');
+                seleccion[key] = clickedCard.dataset.nombre || clickedCard.dataset.value;
             }
+            validateSelection();
         });
     }
 
     handleSelection(menusContainer, 'menu');
     handleSelection(modalidadContainer, 'modalidad');
 
+    // Lógica del formulario y envío
     btnNextStep.addEventListener('click', () => {
         seleccion.comensales = document.getElementById('comensales').value;
-        if (!seleccion.menu || !seleccion.modalidad) {
-            alert('Por favor, selecciona un menú y una modalidad.');
-            return;
-        }
+        if (btnNextStep.disabled) return;
         resumenTexto.textContent = `${seleccion.menu}, para ${seleccion.comensales} personas. Modalidad: ${seleccion.modalidad.replace('-', ' ')}.`;
         step1.classList.add('hidden');
         step2.classList.remove('hidden');
@@ -154,16 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         btnConfirm.disabled = true;
         btnConfirm.textContent = 'Procesando...';
-        const reserva = {
-            ...seleccion,
-            alergia: document.querySelector('input[name="alergia"]:checked').value,
-            alergiaDetalle: alergiaDetalle.value,
-            fecha: document.getElementById('fecha').value,
-            direccion: document.getElementById('direccion').value,
-            email: document.getElementById('email').value,
-            estado: 'pendiente',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
+        const reserva = { ...seleccion, alergia: document.querySelector('input[name="alergia"]:checked').value, alergiaDetalle: alergiaDetalle.value, fecha: document.getElementById('fecha').value, direccion: document.getElementById('direccion').value, email: document.getElementById('email').value, estado: 'pendiente', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
 
         try {
             await db.collection('reservations').add(reserva);
@@ -171,8 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             bookingForm.reset();
             step2.classList.add('hidden');
             step1.classList.remove('hidden');
-            [...menusContainer.children].forEach(child => child.classList.remove('selected'));
-            [...modalidadContainer.children].forEach(child => child.classList.remove('selected'));
+            validateSelection();
         } catch (error) {
             console.error("Error al guardar la reserva: ", error);
             alert('Hubo un problema al confirmar tu reserva.');
@@ -182,5 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    cargarMenus();
+    // Llamadas iniciales
+    await cargarMenus();
+    validateSelection();
 });

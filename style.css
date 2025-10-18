@@ -1,7 +1,7 @@
 /* --- ESTILOS GENERALES Y MOBILE-FIRST --- */
 :root {
     --primary-color: #000000;
-    --secondary-color: #e74c3c;
+    --secondary-color: #BA9D3D;
     --light-gray: #ecf0f1;
     --white: #ffffff;
 }
@@ -33,12 +33,13 @@ header {
 
 h1, h2 {
     color: var(--light-gray);
-    
+}
+
+h2{
+    font-size: 1rem;
 }
 
 /* --- ESTILOS PARA EL NUEVO CARRUSEL EN ABANICO --- */
-
-/* --- ESTILOS PARA EL NUEVO CARRUSEL EN ABANICO (CORREGIDO) --- */
 
 #carousel-header {
     position: relative;
@@ -85,7 +86,7 @@ h1, h2 {
     bottom: 20px;
     right: 20px;
     width: 150px;
-    height: 100px; /* Aumentamos un poco la altura para dar espacio */
+    height: 4em; /* Aumentamos un poco la altura para dar espacio */
     z-index: 3;
 }
 
@@ -292,4 +293,67 @@ button:disabled {
     .reserva-card .actions button {
         width: 100%;
     }
+}
+
+
+/* --- ESTILOS PARA LAS TARJETAS DE MENÚ --- */
+.cards-container {
+    display: flex;
+    gap: 10px; /* Mantiene el espacio entre tarjetas */
+    justify-content: center;
+    /* QUITAMOS 'flex-wrap: wrap;' para forzar una sola línea */
+}
+
+.card {
+    /* border: 2px solid var(--light-gray); */
+    border-radius: 8px;
+    padding: 1px; /* Reducimos el padding de 20px a 15px */
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    flex: 1; 
+    min-width: 70px;
+    background-color: #e6c457;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card.selected {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 15px rgba(231, 185, 60, 0.5);
+}
+
+.card h3 {
+    margin-top: 0;
+    font-size: 12px;
+    margin:0;
+    padding: 0;
+}
+
+.card .card-description,
+.card .card-ideal {
+    font-size: 0.9em;
+    color: #555;
+    margin: 2px 0; /* Añade un pequeño margen vertical y quita el horizontal */
+}
+
+.card .card-price {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-top: auto; /* ¡Esta es la línea clave! */
+    margin-bottom: 0;
+    padding-top: 0px; /* Usamos padding para asegurar espacio arriba */
+}
+
+/* Aviso para el usuario */
+#selection-warning {
+    text-align: center;
+    color: var(--secondary-color);
+    font-weight: bold;
+    margin-top: 15px;
 }

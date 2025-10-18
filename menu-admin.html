@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Menús - Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gestionar Tarjetas de Menú</h1>
+            <p>Edita la descripción, el párrafo "ideal para" y el precio de cada menú.</p>
+            <a href="admin.html" class="nav-link">Volver al Panel Principal</a>
+        </header>
+        <main id="menu-editor-container">
+            <p>Cargando menús...</p>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="menu-admin.js"></script>
+</body>
+</html>
