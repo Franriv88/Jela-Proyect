@@ -1,7 +1,7 @@
 /* --- ESTILOS GENERALES Y MOBILE-FIRST --- */
 :root {
     --primary-color: #000000;
-    --secondary-color: #BA9D3D; /* Dorado */
+    --secondary-color: #c5990b; /* Dorado */
     --light-gray: #ecf0f1;
     --white: #ffffff;
 }
@@ -19,7 +19,7 @@ body {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;
-    background-color: #2c3e50;
+    background-color: #000;
     min-height: 100vh;
     box-sizing: border-box;
 }
@@ -164,7 +164,7 @@ button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 #modalidad-container .card { padding: 15px; gap: 10px; align-items: center; min-width: 120px; }
 .card .iconos { width: 40px; height: 40px; margin-top: 5px; object-fit: contain; display: block; margin-left: auto; margin-right: auto;}
 .card:hover { transform: translateY(-5px); }
-.card.selected { border-color: var(--secondary-color); box-shadow: 0 0 15px rgba(186, 157, 61, 0.5); background-color: var(--secondary-color); color: var(--white); transform: translateY(-5px); }
+.card.selected { border-color: var(--secondary-color); background-color: var(--secondary-color); color: var(--white); transform: translateY(-5px); }
 .card.selected h3, .card.selected p { color: var(--white); }
 .card.selected .card-description, .card.selected .card-ideal { color: rgba(255, 255, 255, 0.9); }
 .card h3 { margin-top: 0; font-size: 0.9em; margin-bottom: 5px; padding: 0; }
