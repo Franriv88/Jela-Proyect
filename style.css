@@ -214,3 +214,28 @@ body.modal-active { overflow: hidden; }
     .carousel .list .item:nth-child(2) { left: 55%; z-index: 99; }
     .carousel .list .item:nth-child(3) { left: calc(55% + 70px); z-index: 98; }
 }
+
+/* --- Completa tus datos ---*/
+.modal-content{
+    background-color: var(--primary-color);
+    color: var(--light-gray);
+}
+
+.modal-content label,
+.modal-content h2,
+.modal-content h3,
+.modal-content p {
+    color: var(--light-gray);
+}
+
+.modal-content h2{
+    margin-top: 50px;
+}
+
+/* Estilo para reducir el tamaño del ícono dentro del botón "Volver" */
+.modal-back-button img {
+    width: 40px; /* Ajusta este valor al tamaño deseado (ej: 16px, 20px) */
+    height: 40px; 
+    margin-right: 5px; /* Crea un pequeño espacio entre el ícono y la palabra "Volver" */
+    vertical-align: middle; /* Alinea el ícono verticalmente con el texto */
+}
