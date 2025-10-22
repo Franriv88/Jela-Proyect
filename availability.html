@@ -3,24 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disponibilidad - Admin</title>
+    <title>Disponibilidad - Chef</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos específicos para esta página */
+        .availability-manager {
+            background-color: var(--light-gray);
+            padding: 15px;
+            border-radius: 8px;
+            color: var(--primary-color);
+        }
+        .day-select-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #calendar-input {
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .time-slots-list div {
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
 </head>
+
 <body>
     <div class="container">
         <header>
-            <h1>Gestionar Disponibilidad</h1>
-            <p>Haz clic en una fecha para bloquearla o desbloquearla. Los días en rojo no están disponibles.</p>
-            <a href="admin.html" class="nav-link">Volver a Reservas</a>
-        </header>
+    <h1>Gestionar Disponibilidad</h1>
+    <p>Define las franjas horarias *disponibles* para cada día.</p>
+    <a href="admin.html" class="nav-link">Volver a Reservas</a>
+    <button id="btn-clear-all" class="btn-danger" style="width: auto; margin-top: 10px;">
+        Borrar Toda la Disponibilidad
+    </button>
+</header>
         <main>
-            <div id="availability-calendar"></div>
+            <div class="availability-manager">
+                <div class="day-select-group">
+                    <label for="calendar-input">Seleccionar Día:</label>
+                    <input type="text" id="calendar-input" placeholder="Haz clic para seleccionar un día">
+                </div>
+
+                <h3>Horarios de Bloqueo (Día Seleccionado)</h3>
+                <p>Las horas NO listadas aquí estarán disponibles. Ejemplo: 9:00 a 12:00, 14:00 a 17:00.</p>
+                
+                <form id="time-slot-form">
+                    <label for="start-time">Hora Inicio:</label>
+                    <input type="time" id="start-time" value="00:00" required>
+                    
+                    <label for="end-time">Hora Fin:</label>
+                    <input type="time" id="end-time" value="23:59" required>
+                    
+                    <button type="submit" id="btn-add-slot">Bloquear Horario</button>
+                </form>
+
+                <div class="time-slots-list" id="blocked-slots-list">
+                    </div>
+            </div>
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script> <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="firebase-config.js"></script>

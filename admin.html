@@ -1,41 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Jelambi Chef</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Jelambi Chef</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>Panel de Administrador</h1>
-            <p>Gestiona todas las reservas de Jelambi Chef.</p>
-            <a href="availability.html" class="nav-link">Gestionar Disponibilidad</a>
-            <div class="header-actions">
-                <button id="btn-change-password">Cambiar Contraseña</button>
-                <button id="btn-logout">Cerrar Sesión</button>
-            </div>
-        </header>
+    <div class="container">
+        <header>
+            <h1>Panel de Administrador</h1>
+            <p>Gestiona todas las reservas de Jelambi Chef.</p>
+            <a href="availability.html" class="nav-link">Gestionar Disponibilidad</a>
+            <div class="header-actions">
+                <button id="btn-change-password">Cambiar Contraseña</button>
+                <button id="btn-logout">Cerrar Sesión</button>
+            </div>
+        </header>
 
-        <main>
-            <div class="tabs">
-                <button id="tab-proximas" class="active">Próximas</button>
-                <button id="tab-finalizadas">Finalizadas</button>
-                <button id="tab-canceladas">Canceladas</button>
+        <main>
+            <!-- INICIO DEL SELECTOR DE ORDEN por fecha del evento o por fecha de registro -->
+            <div style="margin-bottom: 20px;">
+                <label for="sort-order" style="color: var(--light-gray); font-weight: bold;">Ordenar Por:</label>
+                <select id="sort-order" style="padding: 5px; border-radius: 4px; color: var(--primary-color);">
+                    <option value="timestamp_desc">Registro (Más Reciente)</option>
+                    <option value="date_asc">Fecha Evento (Más Cercana)</option>
+                </select>
             </div>
+            
 
-            <div id="reservations-list">
-                <p>Cargando reservas...</p>
-            </div>
-        </main>
-    </div>
+            <div class="tabs">
+                <button id="tab-proximas" class="active">Próximas</button>
+                <button id="tab-finalizadas">Finalizadas</button>
+                <button id="tab-canceladas">Canceladas</button>
+            </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="admin.js"></script>
+            <div id="reservations-list">
+                <p>Cargando reservas...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
 </body>
 </html>

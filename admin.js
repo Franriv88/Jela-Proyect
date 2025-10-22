@@ -5,16 +5,44 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 });
 
-// --- Lógica Principal del Panel de Admin ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Referencias a los elementos del DOM
     const reservationsList = document.getElementById('reservations-list');
+    const sortSelector = document.getElementById('sort-order'); // REFERENCIA AL SELECTOR
     const btnChangePassword = document.getElementById('btn-change-password');
     const btnLogout = document.getElementById('btn-logout');
     const tabs = document.querySelectorAll('.tabs button');
 
     let currentReservations = [];
     let activeTab = 'proximas';
+    // Inicializa currentSort con el valor del selector al cargar el DOM
+    let currentSort = sortSelector ? sortSelector.value : 'timestamp_desc'; 
 
+
+    // --- FUNCIÓN CENTRAL: Escuchar Cambios en Firestore ---
+    const listenForReservations = () => {
+        let query = db.collection('reservations');
+        
+        // 1. Determinar el ordenamiento según el estado actual de currentSort
+        if (currentSort === 'timestamp_desc') {
+            // Ordenar por hora de registro (timestamp) de más reciente (desc)
+            query = query.orderBy('timestamp', 'desc');
+        } else if (currentSort === 'date_asc') {
+            // Ordenar por fecha de evento (fecha) de más cercana (asc)
+            query = query.orderBy('fecha', 'asc');
+        }
+        
+        // 2. Ejecutar la escucha en tiempo real
+        query.onSnapshot((querySnapshot) => {
+            console.log(`Reservas recibidas (Orden: ${currentSort}):`, querySnapshot.docs.length);
+            currentReservations = querySnapshot.docs;
+            renderReservations();
+        }, (error) => {
+            console.error("Error al escuchar las reservas:", error);
+            reservationsList.innerHTML = '<p>Error al cargar las reservas. Revisa la consola.</p>';
+        });
+    };
+    
     // --- Lógica para mostrar enlaces de Admin ---
     const checkUserRole = async () => {
         const user = firebase.auth().currentUser;
@@ -22,7 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 if (userDoc.exists && userDoc.data().role === 'admin') {
-                    const adminLinksContainer = document.getElementById('admin-only-links');
+                    // Asumiendo que quieres que estos enlaces estén fuera de un div específico si no tienes uno
+                    // Si tienes un div para enlaces admin, descomenta el código dentro del if(adminLinksContainer)
+                    /*
+                    const adminLinksContainer = document.getElementById('admin-only-links'); 
                     if (adminLinksContainer) {
                         adminLinksContainer.innerHTML = `
                             <a href="carousel-admin.html" class="nav-link">Gestionar Carrusel</a>
@@ -30,15 +61,24 @@ document.addEventListener('DOMContentLoaded', () => {
                             <a href="availability.html" class="nav-link">Gestionar Disponibilidad</a>
                         `;
                     }
+                    */
                 }
             } catch (error) {
                 console.error("Error checking user role:", error);
             }
         }
     };
-    // Descomenta si tienes el div id="admin-only-links" en admin.html
-    // checkUserRole();
+    checkUserRole();
 
+    // --- AÑADIR LISTENER AL SELECTOR DE ORDEN (CORRECCIÓN) ---
+    // Este listener actualiza la variable y llama a listenForReservations para refrescar la consulta a Firestore
+    if (sortSelector) {
+        sortSelector.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            listenForReservations(); // Vuelve a ejecutar la escucha con el nuevo orden
+        });
+    }
+    
     // --- Lógica de Pestañas ---
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -82,11 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             updateData.motivoCancelacion = firebase.firestore.FieldValue.delete();
         }
+
         reservationRef.update(updateData)
             .catch((error) => console.error("Error al actualizar el estado: ", error));
     };
 
-    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS (CORREGIDA) ---
+    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS ---
     const renderReservations = () => {
         reservationsList.innerHTML = '<p>Cargando reservas...</p>';
 
@@ -107,8 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredReservations.forEach(doc => {
             const reserva = doc.data();
             const id = doc.id;
-
-            // --- Formateo Fecha Evento ---
+            
             let fechaEventoObj = null;
             let fechaFormateada = 'Fecha inválida';
             if (reserva.fecha) {
@@ -118,18 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // --- Formateo Hora Registro (CORREGIDO) ---
-            let horaRegistro = 'No disponible'; // <--- Variable correcta
+            let horaRegistro = 'No disponible';
             if (reserva.timestamp && reserva.timestamp.toDate) {
                 const registroDate = reserva.timestamp.toDate();
-                // Asignamos a la variable correcta 'horaRegistro'
                 horaRegistro = registroDate.toLocaleString('es-ES', {
                     day: 'numeric', month: 'short', year: 'numeric',
                     hour: '2-digit', minute: '2-digit'
-                }).replace(/\./g, ''); // Quitamos puntos
+                }).replace(/\./g, '');
             }
 
-            // --- Cálculo Contador Regresivo ---
             let diasRestantesTexto = '';
             if (fechaEventoObj && !isNaN(fechaEventoObj)) {
                 const hoy = new Date();
@@ -141,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (diffDias === 0) diasRestantesTexto = '¡Es hoy!';
                 else diasRestantesTexto = 'Fecha pasada';
             }
+
 
             const reservationCard = document.createElement('div');
             reservationCard.className = 'reserva-card';
@@ -169,13 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- ESCUCHAR CAMBIOS EN FIRESTORE ---
-    db.collection('reservations').orderBy('timestamp', 'desc')
-      .onSnapshot((querySnapshot) => {
-          currentReservations = querySnapshot.docs;
-          renderReservations();
-      }, (error) => {
-          console.error("Error al escuchar las reservas en admin.js: ", error);
-          reservationsList.innerHTML = '<p>Error al cargar las reservas. Revisa la consola.</p>';
-      });
+    // --- INICIA LA ESCUCHA CON EL ORDEN POR DEFECTO AL CARGAR LA PÁGINA ---
+    listenForReservations(); 
 });
