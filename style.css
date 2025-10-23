@@ -177,9 +177,9 @@ button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 .comensales-section { margin: 25px 0; }
 .comensales-section label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--light-gray); }
 .comensales-input-wrapper { display: flex; align-items: center; gap: 15px; justify-content: center; }
-.label-icon { width: 50px; height: 50px; }
+.label-icon { width: 40px; height: 40px; }
 .arrows-container { display: flex; flex-direction: column; gap: 2px; }
-.stepper-arrow { width: 50px; height: 50px; cursor: pointer; opacity: 0.8; transition: all 0.2s ease; }
+.stepper-arrow { width: 30px; height: 30px; cursor: pointer; opacity: 0.8; transition: all 0.2s ease; }
 .stepper-arrow:hover { opacity: 1; }
 .arrow-up { transform: rotate(180deg); }
 .arrow-up:hover { transform: rotate(180deg); scale(1.1); }
