@@ -3,12 +3,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- LÓGICA DEL CARRUSEL AVANZADO (ROTACIÓN TOTAL) ---
 
     const carouselImages = [
-        'Recursos/Img/gettyimages-1789034712-612x612.jpg',
-        'Recursos/Img/images.jpg',
-        'Recursos/Img/licensed-image.jpg',
-        'Recursos/Img/portada.jpg',
-        'Recursos/Img/licensed-image.jpg',
-        'Recursos/Img/licensed-image.jpg'
+        'Recursos/Img/tostadas.jpg',
+        'Recursos/Img/pasta.jpg',
+        'Recursos/Img/postre.jpg',
+        'Recursos/Img/salmon.jpg',
+        'Recursos/Img/postre2.jpg',
+        'Recursos/Img/vieira.jpg'
     ];
     
     // Referencias a los nuevos contenedores del carrusel
