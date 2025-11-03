@@ -2,14 +2,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- LÓGICA DEL CARRUSEL AVANZADO (ROTACIÓN TOTAL) ---
 
-    // 1. Array de tus imágenes locales.
-    const imagePaths = [
+    const carouselImages = [
         'Recursos/Img/gettyimages-1789034712-612x612.jpg',
         'Recursos/Img/images.jpg',
         'Recursos/Img/licensed-image.jpg',
         'Recursos/Img/portada.jpg',
         'Recursos/Img/licensed-image.jpg',
-        'Recursos/Img/licensed-image.jpg',
+        'Recursos/Img/licensed-image.jpg'
     ];
     
     // Referencias a los nuevos contenedores del carrusel
@@ -18,12 +17,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const timeRunning = document.getElementById('carousel-time-running'); 
     
     // Simulamos los botones de navegación para disparar la función showSlider
-    // Usamos click() para iniciar la rotación, como en el código fuente del carrusel
     const nextBtn = { click: () => showSlider('next') }; 
     
-    const timeRunningDuration = 5000; // 7 segundos para la animación
-    const timeAutoNext = 5000;        // 7 segundos para el avance automático
-    const timeTransition = 0;      // 1 segundo para la transición CSS
+    const timeRunningDuration = 7000;
+    const timeAutoNext = 7000;
+    const timeTransition = 1000;
     
     let runTimeOut;
     let runNextAuto;
@@ -32,19 +30,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const createCarouselItems = () => {
         if (!list) return;
 
-        list.innerHTML = ''; // Limpiar lista
-        imagePaths.forEach((path, index) => {
+        list.innerHTML = '';
+        carouselImages.forEach((path, index) => {
             const item = document.createElement('div');
             item.className = 'item';
             item.style.backgroundImage = `url(${path})`; 
             
-            // Contenido (adaptado al header de Jelambi Chef)
             const content = document.createElement('div');
             content.className = 'content';
-            //content.innerHTML = `
-            //    <div class="title">CHEF JELAMBI</div>
-            //    <div class="name">Experiencia ${index + 1}</div>
-            //`;
             item.appendChild(content);
 
             list.appendChild(item);
@@ -57,35 +50,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let sliderItemsDom = list.querySelectorAll('.carousel .list .item');
 
-        // 1. Manipulación del DOM para la rotación (mueve el primer elemento al final)
         if(type === 'next'){
             list.appendChild(sliderItemsDom[0]);
-            carousel.classList.add('next'); // Clase que activa la animación en CSS
+            carousel.classList.add('next');
         } else{
             list.prepend(sliderItemsDom[sliderItemsDom.length - 1]);
             carousel.classList.add('prev');
         }
 
-        // 2. Controla la animación CSS de la rotación
         clearTimeout(runTimeOut);
         runTimeOut = setTimeout( () => {
             carousel.classList.remove('next');
             carousel.classList.remove('prev');
-        }, timeTransition); // Espera la duración de la transición CSS (1s)
+        }, timeTransition);
 
-        // 3. Reinicia el contador de auto-avance
         clearTimeout(runNextAuto);
         runNextAuto = setTimeout(() => {
-            showSlider('next'); // Llama a la siguiente rotación
+            showSlider('next');
         }, timeAutoNext);
 
-        resetTimeAnimation(); // Reset de la barra de tiempo
+        resetTimeAnimation();
     }
 
     function resetTimeAnimation() {
         if (!timeRunning) return;
         timeRunning.style.animation = 'none';
-        timeRunning.offsetHeight; /* trigger reflow */
+        timeRunning.offsetHeight;
         timeRunning.style.animation = null; 
         timeRunning.style.animation = `runningTime ${timeRunningDuration / 1000}s linear 1 forwards`;
     }
@@ -94,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     createCarouselItems();
     resetTimeAnimation();
     
-    // Iniciar auto-avance
     runNextAuto = setTimeout(() => {
         showSlider('next');
     }, timeAutoNext); 
@@ -115,9 +104,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const alergiaRadios = document.querySelectorAll('input[name="alergia"]');
     const alergiaDetalle = document.getElementById('alergia-detalle');
     const btnConfirm = document.getElementById('btn-confirm');
+    
+    // Referencias a los elementos de comensales
+    const comensalesInput = document.getElementById('comensales');
     const btnComensalesUp = document.getElementById('btn-comensales-up');
     const btnComensalesDown = document.getElementById('btn-comensales-down');
-    const comensalesInput = document.getElementById('comensales');
+    
     const btnBack = document.getElementById('btn-back');
     const selectionWarning = document.createElement('p');
     selectionWarning.id = 'selection-warning';
@@ -126,17 +118,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ----- 2. ESTADO DE LA APLICACIÓN -----
     let seleccion = { menu: null, modalidad: null, comensales: 2 };
-    let blockedDates = [];
+    let disabledTimesForFlatpickr = [];
+
+    // --- FUNCIÓN DE RESETEO COMPLETO ---
+    function resetAllState() {
+        // 1. Resetear el estado de la aplicación
+        seleccion.menu = null;
+        seleccion.modalidad = null;
+        comensalesInput.value = 2;
+        seleccion.comensales = 2;
+
+        // 2. Desactivar selecciones visuales
+        [...menusContainer.children].forEach(c => c.classList.remove('selected'));
+        [...modalidadContainer.children].forEach(c => c.classList.remove('selected'));
+        
+        // 3. Asegurar que la modal esté cerrada
+        modalContainer.classList.add('hidden');
+        document.body.classList.remove('modal-active');
+
+        // 4. Revalidar el estado
+        validateSelection();
+        
+        // 5. Resetear el formulario dentro de la modal
+        bookingForm.reset(); 
+    }
 
     // ----- 3. INICIALIZACIÓN DE DATOS Y LIBRERÍAS -----
     try {
         if (typeof db !== 'undefined') {
-            const snapshot = await db.collection('availability').get();
-            blockedDates = snapshot.docs.map(doc => doc.id);
+            // Carga de franjas horarias bloqueadas (colección blockedItems)
+            const blockedItemsSnapshot = await db.collection('blockedItems').get();
+            
+            blockedItemsSnapshot.docs.forEach(doc => {
+                const item = doc.data();
+                const date = item.date;
+                
+                if (item.startTime && item.endTime) {
+                    disabledTimesForFlatpickr.push({
+                        from: `${date} ${item.startTime}`,
+                        to: `${date} ${item.endTime}`
+                    });
+                } else {
+                    disabledTimesForFlatpickr.push(date);
+                }
+            });
         } else { console.error("Firestore 'db' no inicializado."); }
     } catch (error) { console.error("Error al cargar la disponibilidad:", error); }
 
-    flatpickr("#fecha", { enableTime: true, dateFormat: "Y-m-d H:i", locale: "es", minDate: "today", disable: blockedDates, time_24hr: true });
+    flatpickr("#fecha", { enableTime: true, dateFormat: "Y-m-d H:i", locale: "es", minDate: "today", disable: disabledTimesForFlatpickr, time_24hr: true });
 
     async function cargarMenus() {
         try {
@@ -157,6 +186,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ----- 4. FUNCIONES Y MANEJADORES DE EVENTOS -----
+    
+    // **EVENTOS DE COMENSALES (CORREGIDOS PARA USAR LAS REFERENCIAS CORRECTAS)**
     btnComensalesUp.addEventListener('click', () => {
         let val = parseInt(comensalesInput.value);
         if (val < 15) { comensalesInput.value = val + 1; seleccion.comensales = comensalesInput.value; }
@@ -222,14 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (typeof db !== 'undefined') {
                 await db.collection('reservations').add(reserva);
                 alert('¡Reserva confirmada! Gracias por elegirnos.');
-                bookingForm.reset();
-                comensalesInput.value = 2;
-                seleccion = { menu: null, modalidad: null, comensales: 2 };
-                [...menusContainer.children].forEach(c => c.classList.remove('selected'));
-                [...modalidadContainer.children].forEach(c => c.classList.remove('selected'));
-                modalContainer.classList.add('hidden');
-                document.body.classList.remove('modal-active');
-                validateSelection();
+                resetAllState(); 
             } else {
                 console.error("Firestore 'db' no inicializado. No se puede guardar.");
                 alert("Error: No se pudo conectar a la base de datos.");

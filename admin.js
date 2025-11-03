@@ -110,102 +110,133 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- FUNCIÓN PARA ACTUALIZAR EL ESTADO ---
-    window.updateReservationStatus = (id, newStatus) => {
-        const reservationRef = db.collection('reservations').doc(id);
-        let updateData = { estado: newStatus };
+// --- FUNCIÓN PARA ACTUALIZAR EL ESTADO (MODIFICADA) ---
+window.updateReservationStatus = (id, newStatus) => {
+    const user = firebase.auth().currentUser; // Obtiene el usuario actual
+    if (!user) {
+        alert("Error: Sesión no válida. Por favor, inicia sesión de nuevo.");
+        return;
+    }
 
-        if (newStatus === 'Cancelada') {
-            const reason = prompt("Por favor, ingresa el motivo de la cancelación:");
-            if (reason) {
-                updateData.motivoCancelacion = reason;
-            } else { return; }
-        } else {
-            updateData.motivoCancelacion = firebase.firestore.FieldValue.delete();
+    const reservationRef = db.collection('reservations').doc(id);
+    
+    // Objeto base de actualización
+    let updateData = { 
+        estado: newStatus,
+        lastUpdatedBy: { // Objeto para registrar quién hizo el cambio
+            uid: user.uid,
+            email: user.email,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }
-
-        reservationRef.update(updateData)
-            .catch((error) => console.error("Error al actualizar el estado: ", error));
     };
 
-    // --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS ---
-    const renderReservations = () => {
-        reservationsList.innerHTML = '<p>Cargando reservas...</p>';
+    if (newStatus === 'Cancelada') {
+        const reason = prompt("Por favor, ingresa el motivo de la cancelación:");
+        if (reason) {
+            updateData.motivoCancelacion = reason;
+        } else { return; }
+    } else {
+        updateData.motivoCancelacion = firebase.firestore.FieldValue.delete();
+    }
 
-        const filteredReservations = currentReservations.filter(doc => {
-            const status = doc.data().estado;
-            if (activeTab === 'proximas') return status !== 'Finalizada' && status !== 'Cancelada';
-            if (activeTab === 'finalizadas') return status === 'Finalizada';
-            if (activeTab === 'canceladas') return status === 'Cancelada';
-            return false;
-        });
+    reservationRef.update(updateData)
+        .catch((error) => console.error("Error al actualizar el estado: ", error));
+};
 
-        if (filteredReservations.length === 0) {
-            reservationsList.innerHTML = `<p>No hay reservas en esta categoría.</p>`;
-            return;
+
+// --- FUNCIÓN PARA RENDERIZAR LAS RESERVAS (MODIFICADA PARA MOSTRAR EL REGISTRO) ---
+const renderReservations = () => {
+    reservationsList.innerHTML = '<p>Cargando reservas...</p>';
+
+    const filteredReservations = currentReservations.filter(doc => {
+        const status = doc.data().estado;
+        if (activeTab === 'proximas') return status !== 'Finalizada' && status !== 'Cancelada';
+        if (activeTab === 'finalizadas') return status === 'Finalizada';
+        if (activeTab === 'canceladas') return status === 'Cancelada';
+        return false;
+    });
+
+    if (filteredReservations.length === 0) {
+        reservationsList.innerHTML = `<p>No hay reservas en esta categoría.</p>`;
+        return;
+    }
+
+    reservationsList.innerHTML = '';
+    filteredReservations.forEach(doc => {
+        const reserva = doc.data();
+        const id = doc.id;
+        
+        let fechaEventoObj = null;
+        let fechaFormateada = 'Fecha inválida';
+        if (reserva.fecha) {
+            fechaEventoObj = new Date(reserva.fecha.replace(' ', 'T'));
+            if (!isNaN(fechaEventoObj)) {
+                 fechaFormateada = fechaEventoObj.toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+            }
         }
 
-        reservationsList.innerHTML = '';
-        filteredReservations.forEach(doc => {
-            const reserva = doc.data();
-            const id = doc.id;
+        let horaRegistro = 'No disponible';
+        if (reserva.timestamp && reserva.timestamp.toDate) {
+            const registroDate = reserva.timestamp.toDate();
+            horaRegistro = registroDate.toLocaleString('es-ES', {
+                day: 'numeric', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            }).replace(/\./g, '');
+        }
+
+        let diasRestantesTexto = '';
+        if (fechaEventoObj && !isNaN(fechaEventoObj)) {
+            const hoy = new Date();
+            const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+            const inicioEvento = new Date(fechaEventoObj.getFullYear(), fechaEventoObj.getMonth(), fechaEventoObj.getDate());
+            const diffTiempo = inicioEvento.getTime() - inicioHoy.getTime();
+            const diffDias = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24));
+            if (diffDias > 0) diasRestantesTexto = `Faltan: ${diffDias} día${diffDias > 1 ? 's' : ''}`;
+            else if (diffDias === 0) diasRestantesTexto = '¡Es hoy!';
+            else diasRestantesTexto = 'Fecha pasada';
+        }
+        
+        // --- NUEVA LÓGICA PARA MOSTRAR QUIÉN ACTUALIZÓ ---
+        let lastUpdatedText = '';
+        if (reserva.lastUpdatedBy) {
+            const updaterEmail = reserva.lastUpdatedBy.email;
+            const updaterTime = reserva.lastUpdatedBy.timestamp ? reserva.lastUpdatedBy.timestamp.toDate().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+            // Muestra solo el nombre antes del @
+            const name = updaterEmail.split('@')[0]; 
+            lastUpdatedText = `Actualizado por: ${name} (${updaterTime}h)`;
+        }
+
+
+        const reservationCard = document.createElement('div');
+        reservationCard.className = 'reserva-card';
+        reservationCard.innerHTML = `
+            <div class="card-header-info">
+                <span class="registration-time">Registro: ${horaRegistro}</span>
+                <span class="countdown-timer">${diasRestantesTexto}</span>
+            </div>
+            <p><strong>Email Cliente:</strong> ${reserva.email || 'No especificado'}</p>
+            <p><strong>Fecha Evento:</strong> ${fechaFormateada}</p>
+            <p><strong>Menú:</strong> ${reserva.menu || 'No especificado'}</p>
+            <p><strong>Comensales:</strong> ${reserva.comensales || 'No especificado'}</p>
+            <p><strong>Modalidad:</strong> ${reserva.modalidad || 'No especificado'}</p>
+            <p><strong>Dirección:</strong> ${reserva.direccion || 'No especificado'}</p>
+            ${reserva.alergia === 'si' ? `<p><strong>Alergias:</strong> ${reserva.alergiaDetalle || 'Especificadas'}</p>` : ''}
+            <p><em>Estado: ${reserva.estado || 'pendiente'}</em></p>
             
-            let fechaEventoObj = null;
-            let fechaFormateada = 'Fecha inválida';
-            if (reserva.fecha) {
-                fechaEventoObj = new Date(reserva.fecha.replace(' ', 'T'));
-                if (!isNaN(fechaEventoObj)) {
-                     fechaFormateada = fechaEventoObj.toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
-                }
-            }
+            ${reserva.motivoCancelacion ? `<div class="cancel-reason"><strong>Motivo:</strong> ${reserva.motivoCancelacion}</div>` : ''}
 
-            let horaRegistro = 'No disponible';
-            if (reserva.timestamp && reserva.timestamp.toDate) {
-                const registroDate = reserva.timestamp.toDate();
-                horaRegistro = registroDate.toLocaleString('es-ES', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                }).replace(/\./g, '');
-            }
+            ${lastUpdatedText ? `<p class="last-updated-info" style="font-size: 0.8em; color: #888;">${lastUpdatedText}</p>` : ''}
 
-            let diasRestantesTexto = '';
-            if (fechaEventoObj && !isNaN(fechaEventoObj)) {
-                const hoy = new Date();
-                const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-                const inicioEvento = new Date(fechaEventoObj.getFullYear(), fechaEventoObj.getMonth(), fechaEventoObj.getDate());
-                const diffTiempo = inicioEvento.getTime() - inicioHoy.getTime();
-                const diffDias = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24));
-                if (diffDias > 0) diasRestantesTexto = `Faltan: ${diffDias} día${diffDias > 1 ? 's' : ''}`;
-                else if (diffDias === 0) diasRestantesTexto = '¡Es hoy!';
-                else diasRestantesTexto = 'Fecha pasada';
-            }
-
-
-            const reservationCard = document.createElement('div');
-            reservationCard.className = 'reserva-card';
-            reservationCard.innerHTML = `
-                <div class="card-header-info">
-                    <span class="registration-time">Registro: ${horaRegistro}</span>
-                    <span class="countdown-timer">${diasRestantesTexto}</span>
-                </div>
-                <p><strong>Email:</strong> ${reserva.email || 'No especificado'}</p>
-                <p><strong>Fecha Evento:</strong> ${fechaFormateada}</p>
-                <p><strong>Menú:</strong> ${reserva.menu || 'No especificado'}</p>
-                <p><strong>Comensales:</strong> ${reserva.comensales || 'No especificado'}</p>
-                <p><strong>Modalidad:</strong> ${reserva.modalidad || 'No especificado'}</p>
-                <p><strong>Dirección:</strong> ${reserva.direccion || 'No especificado'}</p>
-                ${reserva.alergia === 'si' ? `<p><strong>Alergias:</strong> ${reserva.alergiaDetalle || 'Especificadas'}</p>` : ''}
-                <p><em>Estado: ${reserva.estado || 'pendiente'}</em></p>
-                ${reserva.motivoCancelacion ? `<div class="cancel-reason"><strong>Motivo:</strong> ${reserva.motivoCancelacion}</div>` : ''}
-                <div class="actions">
-                    <button onclick="updateReservationStatus('${id}', 'Confirmada')">Confirmar</button>
-                    <button onclick="updateReservationStatus('${id}', 'Pendiente')" class="btn-secondary">Pendiente</button>
-                    <button onclick="updateReservationStatus('${id}', 'Finalizada')" class="btn-secondary">Finalizar</button>
-                    <button onclick="updateReservationStatus('${id}', 'Cancelada')" class="btn-danger">Cancelar</button>
-                </div>
-            `;
-            reservationsList.appendChild(reservationCard);
-        });
-    };
+            <div class="actions">
+                <button onclick="updateReservationStatus('${id}', 'Confirmada')">Confirmar</button>
+                <button onclick="updateReservationStatus('${id}', 'Pendiente')" class="btn-secondary">Pendiente</button>
+                <button onclick="updateReservationStatus('${id}', 'Finalizada')" class="btn-secondary">Finalizar</button>
+                <button onclick="updateReservationStatus('${id}', 'Cancelada')" class="btn-danger">Cancelar</button>
+            </div>
+        `;
+        reservationsList.appendChild(reservationCard);
+    });
+};
 
     // --- INICIA LA ESCUCHA CON EL ORDEN POR DEFECTO AL CARGAR LA PÁGINA ---
     listenForReservations(); 
