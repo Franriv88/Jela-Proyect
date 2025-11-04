@@ -215,6 +215,7 @@ const renderReservations = () => {
                 <span class="countdown-timer">${diasRestantesTexto}</span>
             </div>
             <p><strong>Email Cliente:</strong> ${reserva.email || 'No especificado'}</p>
+            <p><strong>Teléfono Cliente: </strong> ${reserva.phone || 'No especificado'}</p>
             <p><strong>Fecha Evento:</strong> ${fechaFormateada}</p>
             <p><strong>Menú:</strong> ${reserva.menu || 'No especificado'}</p>
             <p><strong>Comensales:</strong> ${reserva.comensales || 'No especificado'}</p>

@@ -252,25 +252,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         try {
-    if (typeof db !== 'undefined') {
-        await db.collection('reservations').add(reserva);
-        
-        alert('¡Reserva confirmada! Gracias por elegirnos.');
-
-        // --- Lógica de WhatsApp Click-to-Chat (MANUAL) ---
-        // Generamos el mensaje con los detalles del cliente
-        const clientPhone = document.getElementById('phone').value.replace(/[^0-9]/g, ''); // Limpia el número
-        const clientName = document.getElementById('email').value.split('@')[0]; // Usa el nombre del email como referencia
-        
-        // El número del chef debe ser fijo (con código de país)
-        const chefNumber = '5491122514305'; // ⚠️ REEMPLAZA ESTE NÚMERO POR EL DEL CHEF
-
-        const message = `¡Hola Chef! Nueva Reserva de ${clientName}.%0A%0A*Detalles:*%0A- Menú: ${seleccion.menu}%0A- Comensales: ${seleccion.comensales}%0A- Modalidad: ${seleccion.modalidad}%0A- Cliente Contacto: ${clientPhone}`;
-
-        const whatsappURL = `https://api.whatsapp.com/send?phone=${chefNumber}&text=${message}`;
-        
-        // Abrir WhatsApp en una nueva ventana para que el chef envíe el mensaje
-        window.open(whatsappURL, '_blank');
+            if (typeof db !== 'undefined') {
+                await db.collection('reservations').add(reserva);
+                alert('¡Reserva confirmada! Gracias por elegirnos.');
                 resetAllState(); 
             } else {
                 console.error("Firestore 'db' no inicializado. No se puede guardar.");
