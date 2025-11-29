@@ -7,10 +7,10 @@ firebase.auth().onAuthStateChanged((user) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const calendarInput = document.getElementById('calendar-input');
-    const slotForm = document.getElementById('time-slot-form');
+    const blockForm = document.getElementById('day-block-form'); // NUEVA REFERENCIA
     const blockedSlotsList = document.getElementById('blocked-slots-list');
     
-    // CAMBIO CLAVE: Colección única para todos los bloqueos
+    // CAMBIO CLAVE: Ahora el ID del documento será la FECHA (YYYY-MM-DD)
     const blockedItemsCollection = db.collection('blockedItems'); 
 
     let selectedDate = null;
@@ -29,11 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadAllBlockedItems = () => {
         blockedItemsCollection.onSnapshot((snapshot) => {
             const blockedItems = snapshot.docs.map(doc => ({
-                id: doc.id,
+                id: doc.id, 
                 ...doc.data()
             }));
 
-            renderItems(blockedItems);
+            renderItems(blockedItems); 
         });
     };
 
@@ -41,131 +41,87 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderItems = (items = []) => {
         blockedSlotsList.innerHTML = '';
         if (items.length === 0) {
-            blockedSlotsList.innerHTML = '<p>No hay horarios o días bloqueados actualmente.</p>';
+            blockedSlotsList.innerHTML = '<p>Todos los días están disponibles.</p>';
             return;
         }
 
-        // Ordenar por fecha y luego por hora de inicio
-        items.sort((a, b) => {
-            if (a.date !== b.date) return a.date.localeCompare(b.date);
-            return a.startTime.localeCompare(b.startTime);
-        });
+        // Ordenar por fecha
+        items.sort((a, b) => a.date.localeCompare(b.date));
 
         items.forEach((item, index) => {
             const div = document.createElement('div');
-            // Muestra FECHA COMPLETA y horario
+            
+            // Solo muestra la fecha
             div.innerHTML = `
-                <span>${item.date}: ${item.startTime} - ${item.endTime}</span>
+                <span>Día Bloqueado: ${item.date}</span>
                 <div class="actions">
-                    <button type="button" class="btn-secondary btn-sm" data-action="edit" data-id="${item.id}" style="margin-top: 0;">Editar</button>
-                    <button type="button" class="btn-danger btn-sm" data-action="delete" data-id="${item.id}">Eliminar</button>
+                    <button type="button" class="btn-danger" data-action="delete" data-id="${item.id}" style="margin-top: 0;">Desbloquear</button>
                 </div>
             `;
             blockedSlotsList.appendChild(div);
 
-            // Conectar botones
+            // Conectar el botón de desbloqueo
             div.querySelector('[data-action="delete"]').addEventListener('click', () => {
                 deleteItem(item.id);
-            });
-            div.querySelector('[data-action="edit"]').addEventListener('click', () => {
-                editSlot(item);
             });
         });
     };
 
-    // --- 1. Añadir Nuevo Bloqueo ---
-    slotForm.addEventListener('submit', async (e) => {
+    // --- 1. Añadir/Eliminar Bloqueo de Día Completo ---
+    blockForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!selectedDate) {
-            alert("Por favor, selecciona un día en el calendario.");
+            alert("Por favor, selecciona un día.");
             return;
         }
-
-        const startTime = document.getElementById('start-time').value;
-        const endTime = document.getElementById('end-time').value;
-
-        if (startTime >= endTime) {
-             alert("La hora de inicio debe ser anterior a la hora de fin.");
-             return;
-        }
-
-        const newBlockedItem = { 
-            date: selectedDate, 
-            startTime: startTime, 
-            endTime: endTime 
-        };
+        
+        const dateRef = blockedItemsCollection.doc(selectedDate); // Usamos la fecha como ID
         
         try {
-            await blockedItemsCollection.add(newBlockedItem); // Añadir documento con ID automático
-            alert(`Horario bloqueado: ${selectedDate} de ${startTime} a ${endTime}.`);
-            slotForm.reset();
+            const doc = await dateRef.get();
+
+            if (doc.exists) {
+                // Si ya existe (bloqueado), lo eliminamos (desbloqueamos)
+                await dateRef.delete();
+                alert(`Día ${selectedDate} DESBLOQUEADO.`);
+            } else {
+                // Si no existe, lo creamos (bloqueamos)
+                // Guardamos la fecha y un flag simple
+                await dateRef.set({ date: selectedDate, isBlocked: true }); 
+                alert(`Día ${selectedDate} BLOQUEADO.`);
+            }
+            
             // loadAllBlockedItems se llama automáticamente por onSnapshot
             
         } catch (error) {
-            console.error("Error saving slot:", error);
-            alert("Error al guardar el horario.");
+            console.error("Error al gestionar el bloqueo:", error);
+            alert("Error al guardar el bloqueo del día.");
         }
     });
 
-    // --- 2. Editar Bloqueo (Fecha + Rango) ---
-    const editSlot = async (item) => {
-        const newDate = prompt(`Editando ${item.date}: Ingrese nueva fecha (YYYY-MM-DD):`, item.date);
-        if (newDate === null || newDate.trim() === '') return;
-        
-        const newStartTime = prompt(`Editando ${newDate}: Ingrese nueva hora de inicio (actual: ${item.startTime}):`, item.startTime);
-        if (newStartTime === null) return;
-        
-        const newEndTime = prompt(`Editando ${newDate}: Ingrese nueva hora de fin (actual: ${item.endTime}):`, item.endTime);
-        if (newEndTime === null) return;
-
-        if (newStartTime >= newEndTime) {
-            alert("La hora de inicio debe ser anterior a la hora de fin.");
-            return;
-        }
-
-        const itemRef = blockedItemsCollection.doc(item.id);
-        
-        try {
-            const updatedData = {
-                date: newDate.trim(),
-                startTime: newStartTime,
-                endTime: newEndTime
-            };
-            await itemRef.update(updatedData);
-            alert(`Bloqueo actualizado a: ${newDate} de ${newStartTime} a ${newEndTime}.`);
-            // loadAllBlockedItems se llama automáticamente
-        } catch (error) {
-            console.error("Error updating slot:", error);
-            alert("Error al actualizar el horario.");
-        }
-    };
-
-
-    // --- 3. Eliminar Bloqueo ---
+    // --- 2. Eliminar Bloqueo (Usado por el botón Desbloquear) ---
     const deleteItem = async (itemId) => {
-        if (!confirm("¿Seguro que deseas eliminar este bloqueo?")) return;
+        if (!confirm("¿Seguro que deseas desbloquear este día?")) return;
 
         try {
             await blockedItemsCollection.doc(itemId).delete();
-            alert("Bloqueo eliminado.");
-            // loadAllBlockedItems se llama automáticamente
+            alert("Día desbloqueado.");
         } catch (error) {
             console.error("Error deleting item:", error);
         }
     };
 
 
-    // --- 4. Borrado Masivo (Limpiar Colección) ---
+    // --- 3. Borrado Masivo (Limpiar Colección) ---
     const btnClearAll = document.getElementById('btn-clear-all');
 
     const clearAllAvailability = async () => {
-        if (!confirm("ADVERTENCIA: ¿Estás seguro de que deseas borrar TODA la disponibilidad de horarios y días?")) return;
+        if (!confirm("ADVERTENCIA: ¿Estás seguro de que deseas borrar TODA la disponibilidad de días bloqueados?")) return;
 
         btnClearAll.textContent = 'Borrando...';
         btnClearAll.disabled = true;
 
         try {
-            // Usamos un batch para borrar masivamente
             const snapshot = await blockedItemsCollection.get();
             const batch = db.batch();
             snapshot.docs.forEach((doc) => {
@@ -173,9 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             await batch.commit();
 
-            alert("¡Disponibilidad borrada con éxito!");
+            alert("¡Disponibilidad borrada con éxito! Todo el calendario está ahora abierto.");
         } catch (error) {
-            console.error("Error al borrar la colección de disponibilidad:", error);
+            console.error("Error al borrar la colección:", error);
             alert("Error al borrar la disponibilidad. Revisa la consola.");
         } finally {
             btnClearAll.textContent = 'Borrar Toda la Disponibilidad';
