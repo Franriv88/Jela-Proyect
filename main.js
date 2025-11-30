@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const minDate48Hours = new Date(Date.now() + 48 * 60 * 60 * 1000); 
     
     flatpickr("#fecha", { 
-        enableTime: false, dateFormat: "Y-m-d", locale: "es", 
+        enableTime: false, dateFormat: "m-d-Y", locale: "es", 
         minDate: minDate48Hours, disable: blockedDates, 
         onChange: function() { checkFormValidity(); }
     });
