@@ -42,15 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const element = document.getElementById(cardId);
         if (!element) return;
 
-        const originalInput = element.querySelector('.admin-time-selector input');
-        const realTimeValue = originalInput && originalInput.value ? originalInput.value : '---';
+        // Capturar valores reales ANTES de clonar
+        const originalTimeInput = element.querySelector('.admin-time-selector input[type="time"]');
+        const realTimeValue = originalTimeInput && originalTimeInput.value ? originalTimeInput.value : '---';
+
+        const originalAmountInput = element.querySelector('.admin-amount-setup input');
+        const realAmountValue = originalAmountInput && originalAmountInput.value ? originalAmountInput.value : '---';
 
         // 1. Crear contenedor temporal
         const container = document.createElement('div');
         container.style.position = 'absolute';
         container.style.top = '0';
         container.style.left = '0';
-        // DIMENSIONES A4 (aprox a 96dpi) PARA OCUPAR TODO
         container.style.width = '600px'; 
         container.style.minHeight = '1100px'; 
         container.style.zIndex = '-9999';
@@ -63,21 +66,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. ESTILOS DE PÁGINA COMPLETA
         clone.style.backgroundColor = '#ffffff';
         clone.style.color = '#000000';
-        // Borde grueso alrededor de toda la hoja
         clone.style.border = '2px solid #000'; 
         clone.style.borderRadius = '0';
-        // Padding interno grande para que el texto no toque el borde
         clone.style.padding = '50px'; 
         clone.style.width = '98%'; 
-        clone.style.minHeight = '1100px'; // Forza la altura de la hoja
+        clone.style.minHeight = '1100px'; 
         clone.style.boxSizing = 'border-box';
         clone.style.boxShadow = 'none';
         clone.style.margin = '10px 0';
         
-        // Centrar contenido verticalmente (opcional, queda elegante)
         clone.style.display = 'flex';
         clone.style.flexDirection = 'column';
-        // clone.style.justifyContent = 'center'; // Descomenta si quieres centrado vertical
 
         const allElements = clone.querySelectorAll('*');
         allElements.forEach(el => {
@@ -102,36 +101,45 @@ document.addEventListener('DOMContentLoaded', () => {
         const paragraphs = clone.querySelectorAll('p');
         paragraphs.forEach(p => {
             if (p.innerText.includes('Estado:')) p.remove();
-            // Aumentar fuente para que se lea bien en hoja completa
             p.style.fontSize = '16px';
             p.style.marginBottom = '15px';
         });
 
+        // --- 5. REEMPLAZO DE HORA ---
         const timeSelectorClone = clone.querySelector('.admin-time-selector');
         if(timeSelectorClone) {
             timeSelectorClone.innerHTML = '';
-            
-            // Estilos del contenedor gris
             timeSelectorClone.style.border = 'none';
-            timeSelectorClone.style.background = '#fff'; // Fondo gris
+            timeSelectorClone.style.background = 'none';
             timeSelectorClone.style.padding = '0';
-            timeSelectorClone.style.margin = '15px 0';
+            timeSelectorClone.style.margin = '10px 0';
             timeSelectorClone.style.textAlign = 'left';
-            timeSelectorClone.style.borderRadius = '5px';
 
             const p = document.createElement('p');
-            
-            // AQUÍ ESTÁ LA MAGIA:
-            // 1. <strong> con color DORADO (#BA9D3D) para el título
-            // 2. <span> con color NEGRO (#000000) para la hora
-            p.innerHTML = `<strong style="color: #000; font-size: 1.1em;">Hora Acordada:</strong> <span style="color: #000000; font-size: 1.1em;">${realTimeValue}</span>`;
-            
-            p.style.margin = '0'; // Sin márgenes extra
-            
+            // HORA: Dorado y Negro
+            p.innerHTML = `<strong style="color: #000; font-size: 1.1em;">Hora Acordada:</strong> <span style="color: #000000; font-size: 1em;">${realTimeValue}</span>`;
+            p.style.margin = '0';
             timeSelectorClone.appendChild(p);
         }
 
-        // 5. Encabezado
+        // --- 6. REEMPLAZO DE IMPORTE (NUEVO) ---
+        const amountSelectorClone = clone.querySelector('.admin-amount-setup');
+        if(amountSelectorClone) {
+            amountSelectorClone.innerHTML = '';
+            amountSelectorClone.style.border = 'none';
+            amountSelectorClone.style.background = 'none';
+            amountSelectorClone.style.padding = '0';
+            amountSelectorClone.style.margin = '10px 0';
+            amountSelectorClone.style.textAlign = 'left';
+
+            const p = document.createElement('p');
+            // IMPORTE: Dorado y Negro
+            p.innerHTML = `<strong style="color: #000; font-size: 1.1em;">Importe Acordado:</strong> <span style="color: #000000; font-size: 1em;">$${realAmountValue}</span>`;
+            p.style.margin = '0';
+            amountSelectorClone.appendChild(p);
+        }
+
+        // 7. Encabezado
         const header = document.createElement('div');
         const logoSrc = './Recursos/icons/LogoSinEsquinas.png'; 
         
@@ -139,18 +147,16 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="text-align: center; margin-bottom: 20px;">
                 <img src="${logoSrc}" alt="Logo" style="width: 150px; height: auto; display: block; margin: 0 auto;">
             </div>
-            <p style="color: #000; text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; font-size: 16px; text-transform: uppercase;"></p>
+            <p style="color: #000; text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; font-size: 16px; text-transform: uppercase;">Gastronomía de Autor</p>
             <h2 style="color: #000; text-align: center; margin-bottom: 40px; text-transform: uppercase; text-decoration: underline;">Comprobante de Reserva</h2>
         `;
-        
-        // Insertar encabezado al principio, pero dentro del padding
         clone.insertBefore(header, clone.firstChild);
 
         container.appendChild(clone);
 
-        // 6. Generación (Márgenes en 0 para ocupar todo)
+        // 8. Generación
         const opt = {
-            margin:       0, // MÁRGENES A CERO para que el borde toque la orilla
+            margin:       0,
             filename:     `Reserva_${clientName}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 }, 
@@ -161,8 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.removeChild(container);
         });
     };
-    // ********************************************************
     
+    // ... Resto de configuraciones y listeners ...
     const checkUserRole = async () => {
         const user = firebase.auth().currentUser;
         if (user) {
@@ -212,8 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Función guardar HORA
     window.updateReservationTime = (id, timeValue) => {
         db.collection('reservations').doc(id).update({ horaPactada: timeValue })
+          .catch(err => console.error(err));
+    };
+
+    // --- NUEVA FUNCIÓN: GUARDAR IMPORTE ---
+    window.updateReservationAmount = (id, amountValue) => {
+        db.collection('reservations').doc(id).update({ importePactado: amountValue })
           .catch(err => console.error(err));
     };
 
@@ -268,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (reserva.fecha) {
                 const [dia, mes, anio] = reserva.fecha.split('-');
-                const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+                const meses = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
                 const mesLetras = meses[parseInt(mes) - 1] || "---";
                 fechaFormateada = `${dia} ${mesLetras} ${anio}`;
 
@@ -294,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const horaValue = reserva.horaPactada || "";
+            const amountValue = reserva.importePactado || ""; // Recuperar importe
             
             let lastUpdatedText = '';
             if (reserva.lastUpdatedBy && reserva.lastUpdatedBy.email) {
@@ -322,12 +336,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 <div class="admin-time-selector">
                     <label>🕒 Horario Acordado:</label>
-                    <input type="time" value="${horaValue}" onchange="updateReservationTime('${id}', this.value)">
+                    <input type="time" value="${horaValue}" onblur="updateReservationTime('${id}', this.value)">
                 </div>
+
                 
                 <p><strong>Menú:</strong> ${reserva.menu || '---'}</p>
                 <p><strong>Comensales:</strong> ${reserva.comensales || '---'}</p>
                 <p><strong>Modalidad:</strong> ${reserva.modalidad || '---'}</p>
+
+                <div class="admin-time-selector admin-amount-setup">
+                    <label>💰 Importe Acordado:</label>
+                    <input type="number" value="${amountValue}" placeholder="$" onblur="updateReservationAmount('${id}', this.value)">
+                </div>
                 <p><strong>Dirección:</strong> ${reserva.direccion || '---'}</p>
                 <p><strong>Teléfono:</strong> ${reserva.phone || '<span style="color:red;">No especificado</span>'}</p>
 
