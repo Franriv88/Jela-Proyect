@@ -7,15 +7,14 @@ firebase.auth().onAuthStateChanged((user) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const calendarInput = document.getElementById('calendar-input');
-    const blockForm = document.getElementById('day-block-form'); // NUEVA REFERENCIA
+    const blockForm = document.getElementById('day-block-form');
     const blockedSlotsList = document.getElementById('blocked-slots-list');
     
-    // CAMBIO CLAVE: Ahora el ID del documento será la FECHA (YYYY-MM-DD)
     const blockedItemsCollection = db.collection('blockedItems'); 
 
     let selectedDate = null;
 
-    // Inicializar Flatpickr para seleccionar el día de bloqueo
+    // Inicializar Flatpickr
     flatpickr(calendarInput, {
         dateFormat: "Y-m-d",
         locale: "es",
@@ -24,8 +23,26 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedDate = dateStr;
         }
     });
+
+    // --- FUNCIÓN DE FORMATEO DE FECHA ---
+    // Convierte "2025-12-11" a "11/DIC/2025" de forma segura (sin problemas de zona horaria)
+    const formatearFecha = (fechaString) => {
+        if (!fechaString) return "";
+        
+        const partes = fechaString.split('-'); // Divide año, mes, día
+        if (partes.length !== 3) return fechaString;
+
+        const anio = partes[0];
+        const mesIndex = parseInt(partes[1]) - 1; // Meses en array van de 0 a 11
+        const dia = partes[2];
+
+        const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        const mesLetras = meses[mesIndex] || "---";
+
+        return `${dia} ${mesLetras} ${anio}`;
+    };
     
-    // --- FUNCIÓN CENTRAL: Cargar y Listar TODOS los Bloqueos ---
+    // --- Cargar y Listar Bloqueos ---
     const loadAllBlockedItems = () => {
         blockedItemsCollection.onSnapshot((snapshot) => {
             const blockedItems = snapshot.docs.map(doc => ({
@@ -37,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Función para renderizar TODOS los ítems bloqueados
+    // Función para renderizar
     const renderItems = (items = []) => {
         blockedSlotsList.innerHTML = '';
         if (items.length === 0) {
@@ -45,29 +62,30 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Ordenar por fecha
+        // Ordenar por fecha (usamos la fecha original YYYY-MM-DD para ordenar correctamente)
         items.sort((a, b) => a.date.localeCompare(b.date));
 
         items.forEach((item, index) => {
             const div = document.createElement('div');
             
-            // Solo muestra la fecha
+            // USAMOS LA FUNCIÓN DE FORMATEO AQUÍ
+            const fechaVisual = formatearFecha(item.date);
+
             div.innerHTML = `
-                <span>Día Bloqueado: ${item.date}</span>
+                <span>Día Bloqueado: <strong>${fechaVisual}</strong></span>
                 <div class="actions">
                     <button type="button" class="btn-danger" data-action="delete" data-id="${item.id}" style="margin-top: 0;">Desbloquear</button>
                 </div>
             `;
             blockedSlotsList.appendChild(div);
 
-            // Conectar el botón de desbloqueo
             div.querySelector('[data-action="delete"]').addEventListener('click', () => {
                 deleteItem(item.id);
             });
         });
     };
 
-    // --- 1. Añadir/Eliminar Bloqueo de Día Completo ---
+    // --- Añadir/Eliminar Bloqueo ---
     blockForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!selectedDate) {
@@ -75,44 +93,39 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        const dateRef = blockedItemsCollection.doc(selectedDate); // Usamos la fecha como ID
+        const dateRef = blockedItemsCollection.doc(selectedDate); 
+        const fechaVisual = formatearFecha(selectedDate); // Formateamos también para la alerta
         
         try {
             const doc = await dateRef.get();
 
             if (doc.exists) {
-                // Si ya existe (bloqueado), lo eliminamos (desbloqueamos)
                 await dateRef.delete();
-                alert(`Día ${selectedDate} DESBLOQUEADO.`);
+                alert(`Día ${fechaVisual} DESBLOQUEADO.`);
             } else {
-                // Si no existe, lo creamos (bloqueamos)
-                // Guardamos la fecha y un flag simple
                 await dateRef.set({ date: selectedDate, isBlocked: true }); 
-                alert(`Día ${selectedDate} BLOQUEADO.`);
+                alert(`Día ${fechaVisual} BLOQUEADO.`);
             }
-            
-            // loadAllBlockedItems se llama automáticamente por onSnapshot
             
         } catch (error) {
             console.error("Error al gestionar el bloqueo:", error);
-            alert("Error al guardar el bloqueo del día.");
+            alert("Error al guardar el bloqueo.");
         }
     });
 
-    // --- 2. Eliminar Bloqueo (Usado por el botón Desbloquear) ---
+    // --- Eliminar Bloqueo ---
     const deleteItem = async (itemId) => {
         if (!confirm("¿Seguro que deseas desbloquear este día?")) return;
 
         try {
             await blockedItemsCollection.doc(itemId).delete();
-            alert("Día desbloqueado.");
+            // alert("Día desbloqueado."); 
         } catch (error) {
             console.error("Error deleting item:", error);
         }
     };
 
-
-    // --- 3. Borrado Masivo (Limpiar Colección) ---
+    // --- Borrado Masivo ---
     const btnClearAll = document.getElementById('btn-clear-all');
 
     const clearAllAvailability = async () => {
@@ -129,10 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             await batch.commit();
 
-            alert("¡Disponibilidad borrada con éxito! Todo el calendario está ahora abierto.");
+            alert("¡Todo el calendario está ahora abierto!");
         } catch (error) {
-            console.error("Error al borrar la colección:", error);
-            alert("Error al borrar la disponibilidad. Revisa la consola.");
+            console.error("Error al borrar colección:", error);
         } finally {
             btnClearAll.textContent = 'Borrar Toda la Disponibilidad';
             btnClearAll.disabled = false;
@@ -143,6 +155,5 @@ document.addEventListener('DOMContentLoaded', () => {
          btnClearAll.addEventListener('click', clearAllAvailability);
     }
     
-    // Iniciar la carga y escucha en tiempo real
     loadAllBlockedItems();
 });

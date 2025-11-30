@@ -1,88 +1,48 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disponibilidad - Chef</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* Estilos específicos para esta página */
-        .availability-manager {
-            background-color: var(--light-gray);
-            padding: 15px;
-            border-radius: 8px;
-            color: var(--primary-color);
-        }
-        .day-select-group {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        #calendar-input {
-            padding: 10px;
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 10px;
-        }
-        .time-slots-list > div {
-            padding: 8px;
-            margin-bottom: 5px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .time-slots-list .actions button {
-            padding: 5px 10px;
-            font-size: 0.9em;
-            margin-top: 0;
-            display: inline-block;
-            width: auto;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disponibilidad - Chef</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="container">
-        <header>
-    <h1>Gestionar Disponibilidad</h1>
-    <p>Define los días completos que el chef no está disponible.</p> {/* Texto ajustado */}
-    <a href="admin.html" class="nav-link">Volver a Reservas</a>
-    <button id="btn-clear-all" class="btn-danger" style="width: auto; margin-top: 10px;">
-        Borrar Toda la Disponibilidad
-    </button>
-</header>
-        <main>
-            <div class="availability-manager">
-                
-                <h3>Bloquear/Desbloquear Día Completo</h3>
-                
-                <form id="day-block-form"> {/* Formulario renombrado */}
-                    <label for="calendar-input">Seleccionar Día:</label>
-                    <input type="text" id="calendar-input" placeholder="Haz clic para seleccionar un día">
-                    
-                    <button type="submit" id="btn-toggle-day">Bloquear Día Seleccionado</button> {/* Botón renombrado */}
-                </form>
+    <div class="container">
+        <header>
+            <h1>Gestionar Disponibilidad</h1>
+            <p>Define los días completos que el chef no está disponible.</p>
+            <a href="admin.html" class="nav-link">Volver a Reservas</a>
+            <button id="btn-clear-all" class="btn-danger" style="width: auto; margin-top: 10px;">
+                Borrar Toda la Disponibilidad
+            </button>
+        </header>
+        <main>
+            <div class="availability-manager">
+                
+                <div class="day-select-group">
+                    <label for="calendar-input">Seleccionar Día:</label>
+                    <input type="text" id="calendar-input" placeholder="Haz clic para seleccionar un día">
+                    <button type="submit" id="btn-toggle-day" form="day-block-form">Bloquear Día Seleccionado</button>
+                    <form id="day-block-form" style="display:none;"></form> </div>
 
-                <hr style="margin: 20px 0;">
+                <hr style="margin: 20px 0;">
 
-                <h3>Días Bloqueados Actualmente</h3>
-                <div class="time-slots-list" id="blocked-slots-list">
-                    <p>Cargando bloqueos...</p>
-                </div>
-            </div>
-        </main>
-    </div>
+                <h3>Días Bloqueados Actualmente</h3>
+                <div class="time-slots-list" id="blocked-slots-list">
+                    <p>Cargando bloqueos...</p>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="availability.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="availability.js"></script>
 </body>
 </html>
