@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jelambi Chef - Haz tu Reserva</title>
+    <link rel="icon" href="./Recursos/icons/LogoSinEsquinas.png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="style.css">
@@ -11,38 +12,30 @@
 <body>
 
     <div class="carousel" id="dynamic-carousel">
-        <div class="list" id="carousel-list">
-            </div>
-
+        <div class="list" id="carousel-list"></div>
         <div class="carousel-gradient-overlay"></div>
-
         <div class="header-content-overlay">
             <h1 class="carrusel-title">Jelambi Chef</h1>
-            <p class="carrusel-des">Gastronomía de autor, donde tú elijas.</p>
+            <p class="carrusel-des">Gastronomía de autor, donde tú elijas...</p>
         </div>
-
         <div class="arrows" style="display: none;">
              <button class="prev" id="carousel-prev">&lt;</button>
              <button class="next" id="carousel-next">&gt;</button>
         </div>
-
         <div class="timeRunning" id="carousel-time-running"></div>
     </div>
-
 
     <div class="container">
         <main id="booking-process">
             <section id="step-1">
                 <h2>1. Elige tu Experiencia</h2>
-
                 <label for="menus-container">Selecciona un menú:</label>
-                <div id="menus-container" class="cards-container">
-                    </div>
+                <div id="menus-container" class="cards-container"></div>
 
                 <div class="comensales-section">
                      <label for="comensales">Cantidad de comensales:</label>
                      <div class="comensales-input-wrapper">
-                         <img src="Recursos/icons/avatar-gold.png" alt="Ícono de persona" class="label-icon">
+                         <img src="Recursos/icons/avatar-gold.png" alt="Ícono" class="label-icon">
                          <input type="number" id="comensales" value="2" min="1" max="15">
                          <div class="arrows-container">
                              <img src="Recursos/icons/arrow.png" alt="Más" id="btn-comensales-up" class="stepper-arrow arrow-up">
@@ -54,10 +47,10 @@
                 <label for="modalidad-container">Modalidad:</label>
                 <div id="modalidad-container" class="cards-container">
                     <div class="card" data-value="chef-en-casa">Chef en Casa
-                        <img class="iconos" src="./Recursos/icons/cooking-black.png" alt="Ícono de cocina">
+                        <img class="iconos" src="./Recursos/icons/cooking-black.png" alt="Cocina">
                     </div>
                     <div class="card" data-value="delivery">Delivery
-                        <img class="iconos" src="./Recursos/icons/delivery-black.png" alt="Ícono de entrega">
+                        <img class="iconos" src="./Recursos/icons/delivery-black.png" alt="Entrega">
                     </div>
                 </div>
 
@@ -73,21 +66,19 @@
                         <p id="resumen-texto"></p>
                     </div>
                     <form id="booking-form">
-                        <label class="pregunta-alergia">¿Tienes alguna alergia?</label>
-
-<div class="radio-group">
-    <label class="radio-option">
-        <input type="radio" name="alergia" value="no" checked>
-        <span class="texto-opcion">No</span>
-    </label>
-
-    <label class="radio-option">
-        <input type="radio" name="alergia" value="si">
-        <span class="texto-opcion">Sí</span>
-    </label>
-</div>
+                        <label>¿Tienes alguna alergia?</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="alergia" value="no" checked>
+                                <span class="texto-opcion">No</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="alergia" value="si">
+                                <span class="texto-opcion">Sí</span>
+                            </label>
+                        </div>
                         <textarea id="alergia-detalle" class="hidden" placeholder="Especifica tus alergias..."></textarea>
-
+                        
                         <label for="fecha">Fecha del Evento:</label>
                         <input type="text" id="fecha" required placeholder="Selecciona una fecha...">
 
@@ -96,7 +87,7 @@
 
                         <label for="email">Tu Correo Electrónico:</label>
                         <input type="email" id="email" placeholder="nombre@ejemplo.com" required>
-
+                        
                         <label for="phone">Número de Teléfono (WhatsApp):</label>
                         <input type="tel" id="phone" placeholder="Ej: 11 12345678" required>
 
@@ -105,14 +96,13 @@
                 </div>
             </div>
         </main>
-    </div> 
-    
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-
     <script src="firebase-config.js"></script>
     <script src="main.js"></script>
 </body>
