@@ -267,10 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let diasRestantesTexto = '';
 
             if (reserva.fecha) {
-                const [anio, mes, dia] = reserva.fecha.split('-');
-                const meses = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+                const [dia, mes, anio] = reserva.fecha.split('-');
+                const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
                 const mesLetras = meses[parseInt(mes) - 1] || "---";
-                fechaFormateada = `${dia}/${mesLetras}/${anio}`;
+                fechaFormateada = `${dia} ${mesLetras} ${anio}`;
 
                 const fechaEventoObj = new Date(anio, parseInt(mes) - 1, dia);
                 const hoy = new Date();

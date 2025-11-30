@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicializar Flatpickr
     flatpickr(calendarInput, {
-        dateFormat: "Y-m-d",
+        dateFormat: "d-m-Y",
         locale: "es",
         minDate: "today",
         onChange: (selectedDates, dateStr) => {
